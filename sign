@@ -1,0 +1,37 @@
+#!/bin/bash
+
+Output() {
+  echo "$(date -d "1970-01-01 UTC $2 seconds") - $1"
+}
+
+Duration() {
+  local S=$(echo $FINISH_TIME $BEGIN_TIME | awk '{print$1-$2}')
+  ((h=S/3600))
+  ((m=S%3600/60))
+  ((s=S%60))
+  printf "Signing took: %dh:%dm:%ds\n" $h $m $s
+}
+
+Begin() {
+  BEGIN_TIME=$(date +%s)
+  Output Begin $BEGIN_TIME "$1"
+}
+
+Finish() {
+  FINISH_TIME=$(date +%s)
+  Output Finished $FINISH_TIME "$1"
+  Duration
+}
+
+[ $# -eq 0 ] && { echo "Usage: $0 'input'"; exit 1; }
+
+SIGNDIR=~/bin/keys
+
+INPUT="$1"
+OUTPUT="${INPUT%.*}"-signed.apk
+Begin
+echo "Signing ${INPUT##*/} as ${OUTPUT##*/}"
+java -jar $SIGNDIR/signapk.jar $SIGNDIR/testkey.x509.pem $SIGNDIR/testkey.pk8 "$INPUT" "$OUTPUT"
+echo "Done!"
+Finish
+read -p "Press [Enter] to continue."
