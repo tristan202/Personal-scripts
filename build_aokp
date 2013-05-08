@@ -1,0 +1,390 @@
+#!/bin/bash
+# Menu to maintain and build AOKP.
+# Written by tristan202. Feel free to use, modify and distribute the script.
+# Just remember to give proper credit
+#
+# tristan202 [ad] gmail.com
+
+AOKP=$HOME/android/aokp
+DEVICE=maguro
+OUT=$AOKP/out/target/product/$DEVICE
+TRISTAN202=$HOME/android/tristan202
+
+guake -r AOKP
+numlockx on
+
+Output() {
+  echo "$(date -d "1970-01-01 UTC $2 seconds") - $1 $OPERATION""ing $3"
+}
+
+Duration() {
+  local S=$(echo $FINISH_TIME $BEGIN_TIME | awk '{print$1-$2}')
+  ((h=S/3600))
+  ((m=S%3600/60))
+  ((s=S%60))
+  printf "$OPERATION""ing took: %dh:%dm:%ds\n" $h $m $s
+}
+
+Begin() {
+  BEGIN_TIME=$(date +%s)
+  Output Begin $BEGIN_TIME "$1"
+}
+
+Finish() {
+  FINISH_TIME=$(date +%s)
+  Output Finished $FINISH_TIME "$1"
+  Duration
+}
+
+Init_Repo ()
+{
+  clear
+  if [ ! -d $AOKP ]; then
+    echo ""
+    echo "Setting up AOKP repo..."
+    mkdir $AOKP
+  fi
+  if [ ! -d ~/bin ]; then
+    mkdir ~/bin
+    PATH=~/bin:$PATH
+    curl https://dl-ssl.google.com/dl/googlesource/git-repo/repo > ~/bin/repo
+  fi
+  if [ ! -f ~/bin/repo ]; then
+    curl https://dl-ssl.google.com/dl/googlesource/git-repo/repo > ~/bin/repo
+    chmod a+x ~/bin/repo
+  fi
+  cd $AOKP && repo init -u git://github.com/AOKP/platform_manifest.git -b jb-mr1
+  read -p "Press [Enter] to return to menu..."
+  Main
+}
+
+Start_Sync ()
+{
+  clear
+  if [ -d $AOKP ]; then
+    echo ""
+    OPERATION="Sync"
+    echo "Syncing repo..."
+    Begin
+    echo ""
+    cd $AOKP && repo sync
+    Finish
+  else
+    echo ""
+    echo "Directory does not exist. Check your 'AOKP' variable in line 5."
+    echo ""
+    exit 0
+  fi
+  Sync_End
+}
+
+Merge_repos ()
+{
+  clear
+  echo ""
+  OPERATION="Merg"
+  echo "Merging repo..."
+  Begin
+  echo ""
+  echo "Merging frameworks_base"
+  cd $TRISTAN202/frameworks_base && git pu
+  echo ""
+  echo "Merging packages_apps_Settings"
+  cd $TRISTAN202/packages_apps_Settings && git pu
+  echo ""
+  echo "Merging vendor_aokp"
+  cd $TRISTAN202/vendor_aokp && git pu
+  echo ""
+  echo "Merging packages_apps_ROMControl"
+  cd $TRISTAN202/packages_apps_ROMControl && git pu
+  echo ""
+  echo "Merging packages_apps_LockClock"
+  cd $TRISTAN202/android_packages_apps_LockClock && git cu
+  echo ""
+  echo "Merging android_build"
+  cd $TRISTAN202/android_build && git pu
+  echo ""
+  Finish
+  read -p "Press [Enter] to return to menu..."
+  Main
+}
+
+Sync_End ()
+{
+  echo ""
+  echo "Got any cherries to pick?"
+  prompt='Press [Y] if you do, or [N] to return to main menu.'
+  echo -n "$prompt"
+  echo ""
+  read -n1 char
+  case "$char" in
+    [Nn]) Main ;;
+    [Yy])  Pick_Cherries ;;
+    *)   clear && echo "" && Sync_End ;;
+  esac
+}
+
+Start_Build ()
+{
+  clear
+  OPERATION="Build"
+  files=$(ls $OUT/*.zip* 2> /dev/null | wc -l)
+  if [ "$files" != "0" ]; then
+    echo "Previous builds detected in 'out' folder. Delete them now?"
+    prompt='Press [Y] to delete them, or [N] to start build without deleting them.'
+    echo -n "$prompt"
+    echo ""
+    read -n1 char
+    case "$char" in
+      [Nn]) Build ;;
+      [Yy])  rm $OUT/*.zip* ;;
+      *) Start_Build ;;
+    esac
+  fi
+  Build
+}
+
+Build ()
+{
+  clear
+  echo ""
+  echo "Good, starting build..."
+  Begin
+  cd $AOKP
+  rm -rf out/target/product/$DEVICE/system/build.prop
+  #export USE_CCACHE=1
+  #export CCACHE_DIR=$TRISTAN202/.ccache
+  #prebuilts/misc/linux-x86/ccache/ccache -M 20G
+  wait
+  . build/envsetup.sh && brunch $DEVICE -j2
+  Finish
+  read -p "Press [Enter] to return to menu..."
+  Main
+}
+
+Reboot_Bootloader ()
+{
+  clear
+  echo ""
+  echo "Rebooting to bootloader. Happy flashing."
+  adb reboot bootloader
+  read -p "Press [Enter] to return to menu..."
+  Main
+}
+
+Start_Clobber ()
+{
+  clear
+  echo ""
+  echo "Cleaning build directory..."
+  OPERATION="Clean"
+  Begin
+  cd $AOKP
+  make clobber
+  Finish
+  read -p "Press [Enter] to return to menu..."
+  Main
+}
+
+Pick_Cherries ()
+{
+  clear
+  echo ""
+  echo "Picking cherries..."
+  OPERATION="Cherrypick"
+  tput cnorm
+  echo ""
+  echo "Copy/paste the project folder, i.e. 'frameworks/base'"
+  echo -n ">" && read folder
+  echo ""
+  echo "Now paste the cherry-pick git link, i.e. 'git fetch <someproject> refs/changes/... && git cherry-pick FETCH_HEAD'"
+  echo -n ">" && read cherry
+  clear
+  echo ""
+  Begin
+  cd $AOKP/$folder
+  CHERRY=${cherry%%??????????????????????????????}
+  $CHERRY && git cherry-pick FETCH_HEAD
+  Finish
+  echo ""
+  echo "Got any more cherries to pick?"
+  prompt='Press [Y] if you do, or [N] to return to main menu.'
+  echo -n "$prompt"
+  echo ""
+  read -n1 char
+  case "$char" in
+    [Nn]) Main ;;
+    [Yy])  Pick_Cherries ;;
+    *)   Pick_Cherries ;;
+  esac
+  read -p "Press [Enter] to return to menu..."
+  Main
+}
+
+Start_Push ()
+{
+  NOW=$(date +%b-%d-%Y)
+  clear
+  echo "If you haven't done so already, connect your phone to usb now."
+  read -p "Press [Enter] to continue..."
+  DEVICES=$(adb get-state 2>&1)
+  if [ $DEVICES == device ]; then
+    FILE=$(find $OUT -type f -name "aokp_maguro_un*.zip" -printf %f)
+    for zip in $FILE
+    do
+      echo ""
+      echo "Pushing '$zip' to /sdcard/aokp-unofficial-$NOW-tristan202.zip"
+      OPERATION="Push"
+      Begin
+      adb push $OUT/$zip /data/media/0/aokp-unofficial-$NOW-tristan202.zip
+      Finish
+    done
+  else
+    echo ""
+    echo "Are you completely sure you remembered to plug in both ends of the cable?"
+    read -p "Press [Enter] to try again..."
+    Start_Push
+  fi
+  read -p "Press [Enter] to return to menu..."
+  Main
+}
+
+Reboot_Recovery ()
+{
+  clear
+  echo ""
+  echo "Rebooting to recovery. Happy flashing."
+  adb reboot recovery
+  read -p "Press [Enter] to return to menu..."
+  Main
+}
+
+Ask_Clobber ()
+{
+  while true
+  do
+    clear
+    echo ""
+    echo "Are you sure you want to do this? It is rarely needed..."
+    echo ""
+    prompt='Press [Y] to continue, or [N] to return to main menu.'
+    echo -n "$prompt"
+    read -n1 char
+    case "$char" in
+      [Nn]) Main ;;
+      [Yy]) Start_Clobber ;;
+      *) Ask_Clobber ;;
+    esac
+  done
+}
+
+Logcat_Menu ()
+{
+  NOW=$(date +%b-%d-%Y-%H.%M)
+  clear
+  while true
+  do
+    clear
+    line='----------------------------------------'
+    echo "$line"
+    echo "Logcat menu"
+    echo ""
+    echo "To stop the logcat, press ctrl+z"
+    echo "The name of the logfile will be"
+    echo "~/logcat-<time-date>.log"
+    echo ""
+    echo "Select from the following functions"
+    echo ""
+    echo "  1    Logcat to file"
+    echo "  2    Live logcat"
+    echo "$line"
+    echo -n "  "
+    read -n1 answer
+    case "$answer" in
+      [1]) clear && adb logcat >> ~/logcat-$NOW.log;;
+      [2]) clear && adb logcat -C;;
+    esac
+  done
+  exit 0
+}
+
+Reboot_Menu ()
+{
+  clear
+  while true
+  do
+    clear
+    line='----------------------------------------'
+    echo "$line"
+    echo "Reboot menu"
+    echo ""
+    echo "Select from the following functions"
+    echo ""
+    echo "  1    Reboot"
+    echo "  2    Reboot to recovery"
+    echo "  3    Reboot to bootloader"
+    echo "  4    Return to main menu"
+    echo "$line"
+    echo -n "  "
+    read -n1 answer
+    case "$answer" in
+      [1]) adb reboot && Main;;
+      [2]) Reboot_Recovery;;
+      [3]) Reboot_Bootloader;;
+      [4]) Main;;
+    esac
+  done
+  exit 0
+}
+
+Main ()
+{
+  clear
+  while true
+  do
+    clear
+    line='----------------------------------------'
+    echo "$line"
+    echo "AOKP maintenance and build script"
+    echo ""
+    echo "Select from the following functions"
+    echo ""
+    echo "  S    Set up AOKP repo"
+    echo "  1    Sync AOKP repo"
+    echo "  2    Build AOKP"
+    echo "  3    Push finished build to /sdcard/"
+    echo "  4    Reboot menu"
+    echo "  5    Pick cherries"
+    echo "  6    View the AOKP Gerrit"
+    echo "  L    Logcat"
+    echo "  M    Merge repos"
+    echo "  C    Clean build directory"
+    echo "  X    Exit"
+    echo "$line"
+    tput civis
+    echo -n "  "
+    read -n1 answer
+    case "$answer" in
+      [Ss]) Init_Repo;;
+      [1]) Start_Sync;;
+      [2]) Start_Build;;
+      [3]) Start_Push;;
+      [4]) Reboot_Menu;;
+      [5]) Pick_Cherries;;
+      [6]) xdg-open http://gerrit.sudoservers.com/#/q/status:merged+branch:jb,n,z;;
+      [Cc]) Ask_Clobber;;
+      [Mm]) Merge_repos;;
+      [Ll]) Logcat_Menu;;
+      [Xx]) clear
+        adb kill-server
+        echo "Live long and prosper... tristan202"
+        echo ""
+        tput cnorm
+	numlockx off
+      break ;;
+    esac
+  done
+  exit 0
+}
+
+Main

@@ -1,0 +1,184 @@
+#!/bin/bash
+# Menu to maintain and build CyanogenMOD 10.
+# Written by tristan202. Feel free to use, modify and distribute the script.
+# Just remember to give proper credit
+#
+# tristan202 [ad] gmail.com
+
+CM=$HOME/android/cyanogenmod
+DEVICE=maguro
+OUT=$CM/out/target/product/$DEVICE
+TRISTAN202=$HOME/android/tristan202
+
+guake -r TWRP
+numlockx on
+
+Output() {
+  echo "$(date -d "1970-01-01 UTC $2 seconds") - $1 $OPERATION""ing $3"
+}
+
+Duration() {
+  local S=$(echo $FINISH_TIME $BEGIN_TIME | awk '{print$1-$2}')
+  ((h=S/3600))
+  ((m=S%3600/60))
+  ((s=S%60))
+  printf "$OPERATION""ing took: %dh:%dm:%ds\n" $h $m $s
+}
+
+Begin() {
+  BEGIN_TIME=$(date +%s)
+  Output Begin $BEGIN_TIME "$1"
+}
+
+Finish() {
+  FINISH_TIME=$(date +%s)
+  Output Finished $FINISH_TIME "$1"
+  Duration
+}
+
+Init_Repo ()
+{
+  clear
+  if [ ! -d $CM ]; then
+    echo ""
+    echo "Setting up CyanogenMOD 10 repo..."
+    mkdir $CM
+  fi
+  if [ ! -d ~/bin ]; then
+    mkdir ~/bin
+    PATH=~/bin:$PATH
+    curl https://dl-ssl.google.com/dl/googlesource/git-repo/repo > ~/bin/repo
+  fi
+  if [ ! -f ~/bin/repo ]; then
+    curl https://dl-ssl.google.com/dl/googlesource/git-repo/repo > ~/bin/repo
+    chmod a+x ~/bin/repo
+  fi
+  cd $CM && repo init -u git://github.com/CyanogenMod/android.git -b cm-10.1
+  read -p "Press [Enter] to return to menu..."
+  Main
+}
+
+Start_Sync ()
+{
+  clear
+  if [ -d $CM ]; then
+    echo ""
+    echo "Syncing repo..."
+    OPERATION="Sync"
+    Begin
+    echo ""
+    echo "Merging Team-Win-Recovery-Project"
+    cd $TRISTAN202/Team-Win-Recovery-Project && git tw
+    echo ""
+    cd $CM/bootable/recovery && git pull
+    Finish
+    read -p "Press [Enter] to return to menu..."
+  else
+    echo ""
+    echo "Directory does not exist. Check your 'CM' variable in line 5."
+    echo ""
+    read -p "Press [Enter] to return to menu..."
+    exit 0
+  fi
+  Main
+}
+
+Build ()
+{
+  clear
+  OPERATION="Build"
+  echo ""
+  echo "Good, starting build..."
+  Begin
+  cd ${CM}
+  make clobber && . build/envsetup.sh && lunch cm_$DEVICE-userdebug &&  make -j3 recoveryimage
+  Finish
+  read -p "Press [Enter] to return to menu..."
+  Main
+}
+
+Reboot_Bootloader ()
+{
+  clear
+  echo ""
+  echo "Rebooting to bootloader. Happy flashing."
+  adb reboot bootloader
+  read -p "Press [Enter] to return to menu..."
+  Main
+}
+
+Get_Prebuilts ()
+{
+  clear
+  echo ""
+  echo "Please note, this only has to be done the first time you init repo."
+  OPERATION="Gett"
+  Begin
+  $CM/vendor/cm/get-prebuilts
+  Finish
+  read -p "Press [Enter] to return to menu..."
+}
+
+Get_Prebuilts_First ()
+{
+  OPERATION="Gett"
+  Begin
+  if [ ! -d "$CM/vendor/cm/proprietary" ]; then
+    $CM/vendor/cm/get-prebuilts
+  fi
+  Finish
+  Build
+}
+
+Flash_Recovery ()
+{
+clear
+echo ""
+echo "Flashing new TWRP recovery"
+cd $OUT
+fastboot flash recovery recovery.img
+echo ""
+  read -p "Press [Enter] to return to menu..."
+
+}
+
+Main ()
+{
+  while true
+  do
+    clear
+    line='----------------------------------------'
+    echo "$line"
+    echo "TWRP maintenance and build script"
+    echo ""
+    echo "Select from the following functions"
+    echo ""
+    echo "  S    Set up CyanogenMOD 10 repo"
+    echo "  P    Get CM required prebuilts"
+    echo "  1    Sync repo"
+    echo "  2    Build TWRP"
+    echo "  3    Reboot to bootloader"
+    echo "  4    Flash TWRP recovery"
+    echo "  X    Exit"
+    echo "$line"
+    tput civis
+    echo -n "  "
+    read -n1 answer
+    case "$answer" in
+      [Ss]) Init_Repo;;
+      [Pp]) Get_Prebuilts;;
+      [1]) Start_Sync;;
+      [2]) Build;;
+      [3]) Reboot_Bootloader;;
+      [4]) Flash_Recovery;;
+      [Xx]) clear
+        echo "Live long and prosper... tristan202"
+        echo ""
+        tput cnorm
+      break ;;
+    esac
+  done
+  exit 0
+}
+
+Main

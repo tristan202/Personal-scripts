@@ -1,0 +1,27 @@
+#!/bin/bash
+
+# Script to easily enable/disable output to external monitor/tv.
+#
+# tristan202 [ad] gmail.com
+
+#The scripts basename
+me=`basename $0`
+
+#Query the vga port, and enable if connected.
+if [ "$1" = "enable" ]; then
+	if disper -l | grep "display CRT1" > /dev/null ; then
+		disper -r 1280x768 -c
+		echo "TV-Out enabled"
+	else
+		echo "No secondary screen detected."
+	fi
+
+#Disable tv-out, and restore screen resolution.
+elif [ "$1" = "disable" ]; then
+	echo "TV-Out disabled"
+	disper -r 1366x768 -s
+
+#Print an error message if no argument is given.
+elif [ -z "$1" ]; then
+	echo "Usage: $me enable/disable"
+fi
