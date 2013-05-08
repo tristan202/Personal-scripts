@@ -13,6 +13,7 @@ TRISTAN202=$HOME/android/tristan202
 guake -r AOKP
 numlockx on
 
+#Functions to measure time in different places of the script
 Output() {
   echo "$(date -d "1970-01-01 UTC $2 seconds") - $1 $OPERATION""ing $3"
 }
@@ -36,6 +37,7 @@ Finish() {
   Duration
 }
 
+#Initialize AOKP repo
 Init_Repo ()
 {
   clear
@@ -58,6 +60,7 @@ Init_Repo ()
   Main
 }
 
+#Sync the repo to get the latest changes
 Start_Sync ()
 {
   clear
@@ -78,6 +81,7 @@ Start_Sync ()
   Sync_End
 }
 
+#Merge my forks with upstream changes
 Merge_repos ()
 {
   clear
@@ -109,6 +113,7 @@ Merge_repos ()
   Main
 }
 
+#When sync is done, ask for cherrypicking
 Sync_End ()
 {
   echo ""
@@ -124,6 +129,7 @@ Sync_End ()
   esac
 }
 
+#Just a simple check
 Start_Build ()
 {
   clear
@@ -144,6 +150,7 @@ Start_Build ()
   Build
 }
 
+#Function that builds the actual ROM
 Build ()
 {
   clear
@@ -162,16 +169,7 @@ Build ()
   Main
 }
 
-Reboot_Bootloader ()
-{
-  clear
-  echo ""
-  echo "Rebooting to bootloader. Happy flashing."
-  adb reboot bootloader
-  read -p "Press [Enter] to return to menu..."
-  Main
-}
-
+#Clean the entire build directory
 Start_Clobber ()
 {
   clear
@@ -186,6 +184,7 @@ Start_Clobber ()
   Main
 }
 
+#Cherrypicking function. There must be a better way to do this.
 Pick_Cherries ()
 {
   clear
@@ -221,6 +220,7 @@ Pick_Cherries ()
   Main
 }
 
+#Push the finished ROM to the device
 Start_Push ()
 {
   NOW=$(date +%b-%d-%Y)
@@ -228,6 +228,7 @@ Start_Push ()
   echo "If you haven't done so already, connect your phone to usb now."
   read -p "Press [Enter] to continue..."
   DEVICES=$(adb get-state 2>&1)
+  #This line is sometimes giving an error
   if [ $DEVICES == device ]; then
     FILE=$(find $OUT -type f -name "aokp_maguro_un*.zip" -printf %f)
     for zip in $FILE
@@ -249,6 +250,7 @@ Start_Push ()
   Main
 }
 
+#Reboot to recovery
 Reboot_Recovery ()
 {
   clear
@@ -259,6 +261,18 @@ Reboot_Recovery ()
   Main
 }
 
+#Reboot to bootloader
+Reboot_Bootloader ()
+{
+  clear
+  echo ""
+  echo "Rebooting to bootloader. Happy flashing."
+  adb reboot bootloader
+  read -p "Press [Enter] to return to menu..."
+  Main
+}
+
+#Are you sure you want to clean everything?
 Ask_Clobber ()
 {
   while true
@@ -278,6 +292,7 @@ Ask_Clobber ()
   done
 }
 
+#Submenu with various logcat options
 Logcat_Menu ()
 {
   NOW=$(date +%b-%d-%Y-%H.%M)
@@ -308,6 +323,7 @@ Logcat_Menu ()
   exit 0
 }
 
+#Submenu with various reboot options
 Reboot_Menu ()
 {
   clear
@@ -337,6 +353,7 @@ Reboot_Menu ()
   exit 0
 }
 
+#Main menu
 Main ()
 {
   clear

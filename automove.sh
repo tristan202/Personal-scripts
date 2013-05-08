@@ -1,4 +1,12 @@
 #!/bin/sh
+
+#Ugly script to move various files from my Downloads
+#folder to other places. It is run as a startup process,
+#and runs every 15 seconds. Another approach could
+#be to remove the while loop, and add it as a cron job.
+#
+#tristan202 [ad] gmail.com
+
 while [ 1 ]; do
 for t in ~/Downloads/*.torrent
 do
