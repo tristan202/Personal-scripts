@@ -7,20 +7,14 @@
 
 me=`basename $0`
 
-case $1 in
-	yuga)
-		DEVICE=yuga
-	;;
-	maguro)
-		DEVICE=maguro
-	;;
-	*)
-		echo "Usage: $me {yuga|maguro}"
-		exit 1
-	;;
-esac
+if [ "$#" == "0" ]; then
+    echo ""
+    echo "Usage: $me {Model name, i.e. yuga|maguro}"
+    exit 1
+fi
 
 AOKP=$HOME/android/aokp
+DEVICE=$1
 OUT=$AOKP/out/target/product/$DEVICE
 TRISTAN202=$HOME/android/tristan202
 
@@ -371,7 +365,7 @@ Main ()
     echo "$line"
     echo "AOKP maintenance and build script"
     echo ""
-    echo "Building for: $1"
+    echo "Building for: $DEVICE"
     echo ""
     echo "Select from the following functions"
     echo ""
