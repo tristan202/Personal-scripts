@@ -90,9 +90,9 @@ Start_Sync ()
     echo ""
     exit 0
   fi
-  if [ ! -f .repo/local_manifests/kernel_manifest.sh ]; then
-    cd $AOKP
-    . ./platform_manifest/manual_add_kernel_manifest.sh
+  if [ ! -f $AOKP/.repo/local_manifests/kernel_manifest.xml ]; then
+    echo "Fetching kernel manifest"
+    $AOKP/platform_manifest/manual_add_kernel_manifest.sh
   fi
   Sync_End
 }
