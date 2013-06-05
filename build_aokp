@@ -245,7 +245,7 @@ Start_Push ()
   fi
   DEVICES=$(adb get-state)
   if [ $DEVICES == device ]; then
-    FILE=$(find $OUT -type f -name "aokp_*_un*.zip" -printf %f)
+    FILE=$(find $OUT -type f -name "aokp_$DEVICE_unofficial_*.zip" -printf %f)
     for zip in $FILE
     do
       OPERATION="Push"
