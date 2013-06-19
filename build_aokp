@@ -257,14 +257,14 @@ Start_Push ()
   fi
   DEVICES=$(adb get-state)
   if [ $DEVICES == device ]; then
-    FILE=$(find $OUT -type f -name "aokp_$DEVICE_unofficial_*.zip" -printf %f)
+    FILE=$(find $OUT -type f -name "aokp_*_unofficial_*.zip" -printf %f)
     for zip in $FILE
     do
       OPERATION="Push"
       Begin
       echo ""
       echo "Pushing '$zip' to /sdcard/aokp-unofficial-$NOW-tristan202.zip"
-      adb push $OUT/$zip /data/media/0/aokp-unofficial-$NOW-tristan202.zip
+      adb push $OUT/$zip /sdcard/aokp-unofficial-$NOW-tristan202.zip
       Finish
     done
   else
