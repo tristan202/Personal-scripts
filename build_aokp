@@ -7,6 +7,13 @@
 
 me=`basename $0`
 
+# Colorize and add text parameters
+txtbld=$(tput bold)             # Bold
+bldred=${txtbld}$(tput setaf 1) #  red
+bldgrn=${txtbld}$(tput setaf 2) #  green
+bldblu=${txtbld}$(tput setaf 4) #  blue
+txtrst=$(tput sgr0)             # Reset
+
 if [ "$#" == "0" ]; then
     echo ""
     echo "Usage: $me {Model name, i.e. yuga|maguro}"
@@ -30,7 +37,7 @@ Duration() {
   ((h=S/3600))
   ((m=S%3600/60))
   ((s=S%60))
-  printf "$OPERATION""ing took: %dh:%dm:%ds\n" $h $m $s
+  printf "${bldgrn}$OPERATION""ing took: %dh:%dm:%ds\n${txtrst}" $h $m $s
 }
 
 Begin() {
@@ -47,16 +54,16 @@ Finish() {
 Init_Repo ()
 {
   clear
-  echo "Installing required packages"
+  echo "${bldblu}Installing required packages${txtrst}"
   sudo add-apt-repository ppa:webupd8team/java
   sudo apt-get update
-  sudo apt-get install git gnupg flex bison gperf build-essential \  zip curl libc6-dev libncurses5-dev:i386 x11proto-core-dev \  libx11-dev:i386 libreadline6-dev:i386 libgl1-mesa-glx:i386 \  libgl1-mesa-dev g++-multilib mingw32 tofrodos \  python-markdown libxml2-utils xsltproc zlib1g-dev:i386 \  pngcrush schedtool oracle-java6-installer
+  sudo apt-get install git gnupg flex bison gperf build-essential zip curl libc6-dev libncurses5-dev:i386 x11proto-core-dev libx11-dev:i386 libreadline6-dev:i386 libgl1-mesa-glx:i386 libgl1-mesa-dev g++-multilib mingw32 tofrodos python-markdown libxml2-utils xsltproc zlib1g-dev:i386 pngcrush schedtool oracle-java6-installer
   sudo update-java-alternatives -s java-6-oracle
   sudo apt-get install oracle-java6-set-default
   sudo ln -s /usr/lib/i386-linux-gnu/mesa/libGL.so.1 /usr/lib/i386-linux-gnu/libGL.so
   if [ ! -d $AOKP ]; then
     echo ""
-    echo "Setting up AOKP repo..."
+    echo "${bldblu}Setting up AOKP repo...${txtrst}"
     mkdir $AOKP
   fi
   if [ ! -d ~/bin ]; then
@@ -69,7 +76,7 @@ Init_Repo ()
     chmod a+x ~/bin/repo
   fi
   cd $AOKP && repo init -u git://github.com/AOKP/platform_manifest.git -b jb-mr1
-  read -p "Press [Enter] to return to menu..."
+  read -p "${bldblu}Press [Enter] to return to menu...${txtrst}"
   Main
 }
 
@@ -79,67 +86,194 @@ Start_Sync ()
   if [ -d $AOKP ]; then
     echo ""
     OPERATION="Sync"
-    echo "Syncing repo..."
+    echo "${bldblu}Syncing repo...${txtrst}"
     Begin
     echo ""
     cd $AOKP && repo sync
+    echo ""
     Finish
   else
     echo ""
-    echo "Directory does not exist. Check your 'AOKP' variable in line 5."
+    echo "${bldred}Directory does not exist. Check your 'AOKP' variable in line 5.${txtrst}"
     echo ""
     exit 0
   fi
   if [ ! -f $AOKP/.repo/local_manifests/kernel_manifest.xml ]; then
-    echo "Fetching kernel manifest"
+    echo "${bldblu}Fetching kernel manifest${txtrst}"
     $AOKP/platform_manifest/manual_add_kernel_manifest.sh
   fi
   Sync_End
 }
 
+Linaro_Patch ()
+{
+  #Windows X Linaro patch for Xperia Z
+
+  clear
+  OPERATION="Sync"
+  echo "${bldblu}Applying Linaro patches and installing toolchain...${txtrst}"
+  Begin
+
+  #Replace Google's Toolchain with Linaro's
+  cp $TRISTAN202/android-toolchain-eabi-4.8-2013.06-x86.tar.bz2 $AOKP/prebuilts/gcc/linux-x86/arm
+  cd $AOKP/prebuilts/gcc/linux-x86/arm
+  tar -vxf android-toolchain-eabi-4.8-2013.06-x86.tar.bz2
+  rm android-toolchain-eabi-4.8-2013.06-x86.tar.bz2
+  mv arm-eabi-4.6 arm-eabi-4.6-google
+  mv android-toolchain-eabi arm-eabi-4.6
+
+  #Linaro -O3 optimizations for ROM building
+  cd $AOKP/build
+  git fetch https://github.com/tristan202/build.git && git cherry-pick 9f3ed433fb31b176dd826554eb57cba7fa952706
+
+  #Linaro cortex string handling routines optimizations
+  cd $AOKP/bionic/
+  git fetch https://github.com/CarbonDev/android_bionic.git && git cherry-pick a1c824da0d34fbcc71fe8dd95ff618f4bba3d753
+  git fetch https://github.com/CarbonDev/android_bionic.git && git cherry-pick a046eb1144eb947f69ad65bcc1a97498d8075741
+  git fetch https://github.com/CarbonDev/android_bionic.git && git cherry-pick b66fa68efbf907b8f9e6fcafa31e877cc3e1c565
+
+  #TWRP Recovery Linaro fix
+  cd $AOKP/bootable/recovery/
+  git fetch https://github.com/WindowsX/Team-Win-Recovery-Project.git && git cherry-pick fc866246fe05d743ac5917ee44dbdffe1f620714
+  git fetch https://github.com/WindowsX/Team-Win-Recovery-Project.git && git cherry-pick 4e0cc5ba0b883413834a81d32d9501a802022053
+
+  cd $AOKP/external/clang
+  git fetch https://github.com/WindowsX/android_external_clang.git && git cherry-pick 81d67da93bd3afa9ce7f5064562ddb0c91ba0a0c
+
+  cd $AOKP/dalvik/
+  git fetch https://github.com/WindowsX/android_dalvik.git && git cherry-pick 1c5822ece7f43f13e38ca7d58bc0d5b7f9c79f0f
+
+  cd $AOKP/frameworks/compile/mclinker
+  git fetch https://github.com/WindowsX/android_frameworks_compile_mclinker.git && git cherry-pick 1b1004f75cd7493e28f86690ff647cb36b130d64
+
+  cd $AOKP/external/mesa3d
+  git fetch https://github.com/WindowsX/android_external_mesa3d.git && git cherry-pick 08ea469ce99454bbf177b4257a74af392fe23ba6
+
+  cd $AOKP/external/linux-tools-perf
+  git fetch https://github.com/WindowsX/android_external_linux-tools-perf.git && git cherry-pick 0eb6e3237292092d4fcc05ecd5bd16425110fa3e
+
+  cd $AOKP/hardware/qcom/media-caf
+  git fetch https://github.com/WindowsX/android_hardware_qcom_media-caf.git && git cherry-pick 4d64d4a65f4c04bce4ef3e373681337b967d4fb9
+
+  #Trailblazerz Linaro patches
+
+  cd $AOKP/external/e2fsprogs/
+  git fetch https://github.com/trailblazerz/android_external_e2fsprogs.git && git cherry-pick 0e540a3cf8c4dd22205ef39a6f9d6edfa0d1183a
+
+  cd $AOKP/external/stlport/
+  git fetch https://github.com/trailblazerz/android_external_stlport.git && git cherry-pick 05c206e22eddf9d09b3c497721a94aa23b922811
+
+  cd $AOKP/external/openssl/
+  git fetch https://github.com/trailblazerz/android_external_openssl.git && git cherry-pick b43b3c2935e8f27b74c53be2f67fe49f3a515228
+
+  cd $AOKP/frameworks/base/
+  git fetch https://github.com/trailblazerz/android_frameworks_base.git && git cherry-pick 3c5ec8d73f8c8dd2b2b84d999c8ad4911566c079
+
+  cd $AOKP/external/skia/
+  git fetch https://github.com/trailblazerz/android_external_skia.git && git cherry-pick d496d1bb506b925513d8f5d6e4d8a6c0a67cf7d8
+
+  cd $AOKP/frameworks/av/
+  git fetch https://github.com/trailblazerz/android_frameworks_av.git && git cherry-pick 634477166074d503cc8df571315b3b5c4bf4a08d
+
+  cd $AOKP/frameworks/ex/
+  git fetch https://github.com/trailblazerz/android_frameworks_ex.git && git cherry-pick aa5da9c8956f09072bb9e783dee2a67798663bb6
+
+  cd $AOKP/frameworks/wilhelm/
+  git fetch https://github.com/trailblazerz/android_frameworks_wilhelm.git && git cherry-pick 07251f657bb21080ab96093dc5275b37589bbf37
+  git fetch https://github.com/trailblazerz/android_frameworks_wilhelm.git && git cherry-pick 48cc6405503668dc38b4713a98e08d1174b2340c
+
+  cd $AOKP/frameworks/rs/
+  git fetch https://github.com/trailblazerz/android_frameworks_rs.git && git cherry-pick f276ba5f5435d6406ef07030e4b1cf613699c62e
+
+  cd $AOKP/external/dnsmasq/
+  git fetch https://github.com/trailblazerz/android_external_dnsmasq.git && git cherry-pick 446fceadb803f8c28de809907d55dfab82e9827f
+
+  cd $AOKP/external/openssh/
+  git fetch https://github.com/trailblazerz/android_external_openssh.git && git cherry-pick d6a26a88f1f4a39d107c6b6e0296545b9852a50d
+
+  cd $AOKP/frameworks/native/
+  git fetch https://github.com/trailblazerz/android_frameworks_native.git && git cherry-pick d75d8d1570bebf8f5de01754fa24e51ba3695999
+
+  cd $AOKP/hardware/qcom/display-caf/
+  git fetch https://github.com/trailblazerz/android_hardware_qcom_display-caf.git && git cherry-pick 54b089f6a8d4313edca634c51ebdbe178f8b90e3
+  git fetch https://github.com/trailblazerz/android_hardware_qcom_display-caf.git && git cherry-pick d0a861554a0f6d13d3ac6a2aa6b81533f9c3b62d
+  git fetch https://github.com/trailblazerz/android_hardware_qcom_display-caf.git && git cherry-pick a9df638dda54472bb7f841b051f2d299316f6b51
+
+  cd $AOKP/libcore
+  git fetch https://github.com/trailblazerz/android_libcore.git && git cherry-pick 40617f103bf38e61c43edee4c4ecbc2ea4aaedea
+
+  cd $AOKP/external/webkit/
+  git fetch https://github.com/trailblazerz/android_external_webkit.git && git cherry-pick bb873522bc0ed7a4aaa3552527872ece198db104
+
+  Finish
+  read -p "${bldblu}Press [Enter] to return to menu...${txtrst}"
+  Main
+
+}
 
 Merge_repos ()
 {
   clear
   echo ""
   OPERATION="Merg"
-  echo "Merging repos..."
+  echo "${bldblu}Merging repos...${txtrst}"
   Begin
   echo ""
-  echo "Merging android_build"
-  cd $TRISTAN202/android_build && git pu
-  echo ""
-  echo "Merging frameworks_base"
+  echo "${bldblu}Merging frameworks_base${txtrst}"
   cd $TRISTAN202/frameworks_base && git pu
   echo ""
-  echo "Merging packages_apps_Settings"
+  echo "${bldblu}Merging device_sony_yuga${txtrst}"
+  cd $TRISTAN202/device_sony_yuga && git pu
+  echo ""
+  echo "${bldblu}Merging packages_apps_Settings${txtrst}"
   cd $TRISTAN202/packages_apps_Settings && git pu
   echo ""
-  echo "Merging vendor_aokp"
+  echo "${bldblu}Merging vendor_aokp${txtrst}"
   cd $TRISTAN202/vendor_aokp && git pu
   echo ""
-  echo "Merging packages_apps_ROMControl"
-  cd $TRISTAN202/packages_apps_ROMControl && git pu
+  echo "${bldblu}Merging android_build${txtrst}"
+  cd $TRISTAN202/build && git pu
   echo ""
-  echo "Merging packages_apps_LockClock"
+  echo "${bldblu}Merging packages_apps_LockClock${txtrst}"
   cd $TRISTAN202/android_packages_apps_LockClock && git cu
   echo ""
+  echo "${bldblu}Merging android_external_zlib${txtrst}"
+  cd $TRISTAN202/android_external_zlib && git cu
+  echo ""
+  echo "${bldblu}Merging android_kernel_sony_apq8064${txtrst}"
+  cd $TRISTAN202/android_kernel_sony_apq8064 && git cu
+  echo ""
   Finish
-  read -p "Press [Enter] to return to menu..."
+  read -p "${bldblu}Press [Enter] to return to menu...${txtrst}"
   Main
 }
 
 Sync_End ()
 {
   echo ""
-  echo "Got any cherries to pick?"
-  prompt='Press [Y] if you do, or [N] to return to main menu.'
-  echo -n "$prompt"
+  echo "${bldblu}Got any cherries to pick?${txtrst}"
+  echo ""
+  echo -n "Press [${bldred}Y${txtrst}] if you do, or [${bldred}N${txtrst}] to return to main menu."
+  echo ""
+  read -n1 char
+  case "$char" in
+    [Nn]) Sync_Linaro ;;
+    [Yy])  Pick_Cherries ;;
+    *)   clear && echo "" && Sync_End ;;
+  esac
+}
+
+Sync_Linaro ()
+{
+  echo ""
+  echo "${bldblu}Would you like to apply Linaro build optimizations and toolchain?${txtrst}"
+  echo ""
+  echo -n "Press [${bldred}Y${txtrst}] if you do, or [${bldred}N${txtrst}] to return to main menu."
   echo ""
   read -n1 char
   case "$char" in
     [Nn]) Main ;;
-    [Yy])  Pick_Cherries ;;
+    [Yy])  Linaro_Patch ;;
     *)   clear && echo "" && Sync_End ;;
   esac
 }
@@ -151,8 +285,8 @@ Start_Build ()
   files=$(ls $OUT/*.zip* 2> /dev/null | wc -l)
   if [ "$files" != "0" ]; then
     echo "Previous builds detected in 'out' folder. Delete them now?"
-    prompt='Press [Y] to delete them, or [N] to start build without deleting them.'
-    echo -n "$prompt"
+    echo ""
+    echo -n "Press [${bldred}Y${txtrst}] to delete them, or [${bldred}N${txtrst}] to start build without deleting them."
     echo ""
     read -n1 char
     case "$char" in
@@ -168,7 +302,7 @@ Build ()
 {
   clear
   echo ""
-  echo "Good, starting build..."
+  echo "${bldblu}Good, starting build...${txtrst}"
   Begin
   cd $AOKP
   rm -rf out/target/product/$DEVICE/system/build.prop
@@ -176,9 +310,17 @@ Build ()
   #export CCACHE_DIR=$TRISTAN202/.ccache
   #prebuilts/misc/linux-x86/ccache/ccache -M 20G
   wait
-  . build/envsetup.sh && brunch $DEVICE -j2
+  echo ""
+  echo "${bldblu}Setting up environment${txtrst}"
+  echo ""
+  . build/envsetup.sh
+  wait
+  echo ""
+  echo "${bldblu}Brunching device${txtrst}"
+  echo ""
+  brunch $DEVICE -j2
   Finish
-  read -p "Press [Enter] to return to menu..."
+  read -p "${bldblu}Press [Enter] to return to menu...${txtrst}"
   Main
 }
 
@@ -186,9 +328,9 @@ Reboot_Bootloader ()
 {
   clear
   echo ""
-  echo "Rebooting to bootloader. Happy flashing."
+  echo "${bldblu}Rebooting to bootloader. Happy flashing.${txtrst}"
   adb reboot bootloader
-  read -p "Press [Enter] to return to menu..."
+  read -p "${bldblu}Press [Enter] to return to menu...${txtrst}"
   Main
 }
 
@@ -196,13 +338,13 @@ Start_Clobber ()
 {
   clear
   echo ""
-  echo "Cleaning build directory..."
+  echo "${bldblu}Cleaning build directory...${txtrst}"
   OPERATION="Clean"
   Begin
   cd $AOKP
   make clobber
   Finish
-  read -p "Press [Enter] to return to menu..."
+  read -p "${bldblu}Press [Enter] to return to menu...${txtrst}"
   Main
 }
 
@@ -210,7 +352,7 @@ Pick_Cherries ()
 {
   clear
   echo ""
-  echo "Picking cherries..."
+  echo "${bldblu}Picking cherries...${txtrst}"
   OPERATION="Cherrypick"
   tput cnorm
   echo ""
@@ -228,8 +370,8 @@ Pick_Cherries ()
   Finish
   echo ""
   echo "Got any more cherries to pick?"
-  prompt='Press [Y] if you do, or [N] to return to main menu.'
-  echo -n "$prompt"
+  echo ""
+  echo -n "Press [${bldred}Y${txtrst}] if you do, or [${bldred}N${txtrst}] to return to main menu."
   echo ""
   read -n1 char
   case "$char" in
@@ -237,7 +379,7 @@ Pick_Cherries ()
     [Yy])  Pick_Cherries ;;
     *)   Pick_Cherries ;;
   esac
-  read -p "Press [Enter] to return to menu..."
+  read -p "${bldblu}Press [Enter] to return to menu...${txtrst}"
   Main
 }
 
@@ -246,7 +388,7 @@ Start_Push ()
   NOW=$(date +%b-%d-%Y)
   clear
   echo "If you haven't done so already, connect your phone to usb now."
-  read -p "Press [Enter] to continue..."
+  read -p "${bldblu}Press [Enter] to continue...${txtrst}"
   echo ""
   if pidof -x adb > /dev/null
   then
@@ -263,8 +405,8 @@ Start_Push ()
       OPERATION="Push"
       Begin
       echo ""
-      echo "Pushing '$zip' to /sdcard/aokp-unofficial-$NOW-tristan202.zip"
-      adb push $OUT/$zip /sdcard/aokp-unofficial-$NOW-tristan202.zip
+      echo "Pushing '$zip' to /ext_card/aokp-unofficial-$NOW-tristan202.zip"
+      adb push $OUT/$zip /ext_card/aokp-unofficial-$NOW-tristan202.zip
       Finish
     done
   else
@@ -273,7 +415,7 @@ Start_Push ()
     read -p "Press [Enter] to try again..."
     Start_Push
   fi
-  read -p "Press [Enter] to return to menu..."
+  read -p "${bldblu}Press [Enter] to return to menu...${txtrst}"
   Main
 }
 
@@ -283,7 +425,7 @@ Reboot_Recovery ()
   echo ""
   echo "Rebooting to recovery. Happy flashing."
   adb reboot recovery
-  read -p "Press [Enter] to return to menu..."
+  read -p "${bldblu}Press [Enter] to return to menu...${txtrst}"
   Main
 }
 
@@ -293,10 +435,9 @@ Ask_Clobber ()
   do
     clear
     echo ""
-    echo "Are you sure you want to do this? It is rarely needed..."
+    echo "${bldred}Are you sure you want to do this? It is rarely needed...${txtrst}"
     echo ""
-    prompt='Press [Y] to continue, or [N] to return to main menu.'
-    echo -n "$prompt"
+    echo -n "Press [${bldred}Y${txtrst}] to continue, or [${bldred}N${txtrst}] to return to main menu."
     read -n1 char
     case "$char" in
       [Nn]) Main ;;
@@ -314,7 +455,7 @@ Logcat_Menu ()
   do
     clear
     line='----------------------------------------'
-    echo "$line"
+    echo "${bldblu}$line${bldrst}"
     echo "Logcat menu"
     echo ""
     echo "To stop the logcat, press ctrl+z"
@@ -326,7 +467,7 @@ Logcat_Menu ()
     echo "  1    Logcat to file"
     echo "  2    Live logcat"
     echo "  3    Return to main menu"
-   echo "$line"
+    echo "${bldblu}$line${bldrst}"
     echo -n "  "
     read -n1 answer
     case "$answer" in
@@ -345,7 +486,7 @@ Reboot_Menu ()
   do
     clear
     line='----------------------------------------'
-    echo "$line"
+    echo "${bldblu}$line${bldrst}"
     echo "Reboot menu"
     echo ""
     echo "Select from the following functions"
@@ -354,7 +495,7 @@ Reboot_Menu ()
     echo "  2    Reboot to recovery"
     echo "  3    Reboot to bootloader"
     echo "  4    Return to main menu"
-    echo "$line"
+    echo "${bldblu}$line${bldrst}"
     echo -n "  "
     read -n1 answer
     case "$answer" in
@@ -374,25 +515,25 @@ Main ()
   do
     clear
     line='----------------------------------------'
-    echo "$line"
+    echo "${bldblu}$line${txtrst}"
     echo "AOKP maintenance and build script"
     echo ""
-    echo "Building for: $DEVICE"
+    echo "Building for: ${bldblu}$DEVICE${txtrst}"
     echo ""
     echo "Select from the following functions"
     echo ""
-    echo "  S    Set up AOKP repo"
-    echo "  1    Sync AOKP repo"
-    echo "  2    Build AOKP"
-    echo "  3    Push finished build to /sdcard/"
-    echo "  4    Reboot menu"
-    echo "  5    Pick cherries"
-    echo "  6    View the AOKP Gerrit"
-    echo "  L    Logcat"
-    echo "  M    Merge repos"
-    echo "  C    Clean build directory"
-    echo "  X    Exit"
-    echo "$line"
+    echo "  ${bldgrn}S${txtrst}    Set up AOKP repo"
+    echo "  ${bldblu}1${txtrst}    Sync AOKP repo"
+    echo "  ${bldblu}2${txtrst}    Build AOKP"
+    echo "  ${bldblu}3${txtrst}    Push finished build to /sdcard/"
+    echo "  ${bldblu}4${txtrst}    Reboot menu"
+    echo "  ${bldblu}5${txtrst}    Pick cherries"
+    echo "  ${bldblu}6${txtrst}    View the AOKP Gerrit"
+    echo "  ${bldblu}L${txtrst}    Logcat"
+    echo "  ${bldblu}M${txtrst}    Merge repos"
+    echo "  ${bldred}C${txtrst}    Clean build directory"
+    echo "  ${bldblu}X${txtrst}    Exit"
+    echo "${bldblu}$line${txtrst}"
     tput civis
     echo -n "  "
     read -n1 answer

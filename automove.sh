@@ -1,12 +1,4 @@
 #!/bin/sh
-
-#Ugly script to move various files from my Downloads
-#folder to other places. It is run as a startup process,
-#and runs every 15 seconds. Another approach could
-#be to remove the while loop, and add it as a cron job.
-#
-#tristan202 [ad] gmail.com
-
 while [ 1 ]; do
 for t in ~/Downloads/*.torrent
 do
@@ -35,6 +27,13 @@ for i in ~/android/apks/Unknown*.apk
 do
 	rm "$i"
 done
+
+for d in ~/Documents/Databases/clz*.zip
+do
+	adb push "$d" /sdcard/
+	rm "$d"
+done
+
   sleep 15
 done
 

@@ -1,15 +1,8 @@
 #!/bin/bash
 
-#Little script used to copy file to android devices via
-#the android debugging bridge ADB. I use it as a right click
-#menu option in tuxcmd, by adding it to the file types.
-#
-#tristan202 [ad] gmail.com
-
-#Change the title of the terminal window
 echo -ne "\033]0;ADB Push\007"
+export PATH=${PATH}:/home/tristan202/android-sdk/platform-tools/
 
-#Functions to show the time used to copy
 Output() {
   echo "$(date -d "1970-01-01 UTC $2 seconds") - $1"
 }
@@ -33,9 +26,29 @@ Finish() {
   Duration
 }
 
-#Copying starts here
+fbname=`basename "$2"`
+
 Begin
-$HOME/android-sdk/platform-tools/adb push "$1" /sdcard/
+  if pidof -x adb > /dev/null
+  then
+    echo ""
+    echo "ADB server already running, proceeding."
+    echo ""
+  else
+    adb start-server
+  fi
+if [ "$1"="int" -a "$1" != "ext" ]; then
+echo "Pushing $fbname to /sdcard/$fbname"
+adb push "$2" /sdcard/
 echo "Done!"
 Finish
 read -p "Press [Enter] to continue."
+exit 0
+elif [ "$1"="ext" -a "$1" != "int" ]; then
+echo "Pushing $fbname to /ext_card/$fbname"
+adb push "$2" /ext_card/
+echo "Done!"
+Finish
+read -p "Press [Enter] to continue."
+exit 0
+fi
