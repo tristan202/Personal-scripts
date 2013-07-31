@@ -27,22 +27,40 @@ Finish() {
 }
 
 Begin
-cdrecord -v speed=4 gracetime=2 driveropts=burnfree -eject dev=1,0,0 -sao "$1"
+while ! udisks --show-info /dev/sr0 | grep -c "blank: *1"
+do
+clear
+echo "Waiting for disc."
+sleep 1 && clear
+echo "Waiting for disc.."
+sleep 1 && clear
+echo "Waiting for disc..."
+sleep 1 && clear
+done
+clear
+echo "Blank disk detected, starting burn."
 echo ""
-echo "$1 burned to disc."
+growisofs -speed=2 -dvd-compat -Z /dev/sr0="$1"
+
+#For use with Brasero
+#brasero --immediately -i "$1"
+
+# For use with cdrtools
+# cdrecord -v speed=4 gracetime=2 driveropts=burnfree -eject -dev=/dev/sr0 -sao "$1"
+
+echo ""
+echo "$fbname burned to disc."
 echo ""
 Finish
+paplay ~/bin/woohoo.wav
 echo ""
 echo "Done!"
-    echo "Would you like to delete the iso?"
+    echo "Would you like to delete $fbname?"
     prompt='Press [Y] to delete it, or [N] to quit without deleting it.'
     echo -n "$prompt"
     echo ""
     read -n1 char
     case "$char" in
       [Nn]) echo "" && read -p "Press [Enter] to continue." ;;
-      [Yy])  rm $1  && echo "" && echo "$1 deleted" && echo "" && read -p "Press [Enter] to continue." ;;
+      [Yy])  rm "$1"  && echo "" && echo "$fbname deleted" && echo "" && read -p "Press [Enter] to continue." ;;
     esac
-  fi
-
-read -p "Press [Enter] to continue."

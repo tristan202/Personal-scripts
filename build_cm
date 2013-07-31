@@ -5,12 +5,18 @@
 #
 # tristan202 [ad] gmail.com
 
-CM=$HOME/android/cm10.1
-DEVICE=maguro
+if [ "$#" == "0" ]; then
+    echo ""
+    echo "Usage: $me {Model name, i.e. yuga|maguro}"
+    exit 1
+fi
+
+CM=$HOME/android/cm10.2
+DEVICE=$1
 OUT=$CM/out/target/product/$DEVICE
 TRISTAN202=$HOME/android/tristan202
 
-guake -r CM
+guake -r CM-10.2
 numlockx on
 
 Output() {
@@ -53,7 +59,7 @@ Init_Repo ()
     curl https://dl-ssl.google.com/dl/googlesource/git-repo/repo > ~/bin/repo
     chmod a+x ~/bin/repo
   fi
-  cd $CM && repo init -u git://github.com/CyanogenMod/android.git -b cm-10.1
+  cd $CM && repo init -u git://github.com/CyanogenMod/android.git -b cm-10.2
   read -p "Press [Enter] to return to menu..."
   Main
 }
@@ -67,6 +73,7 @@ Start_Sync ()
     echo "Syncing repo..."
     Begin
     echo ""
+    cd $TRISTAN202/android_frameworks_base && git cu
     cd $CM && repo sync
     Finish
   else
@@ -191,17 +198,25 @@ Start_Push ()
   NOW=$(date +%b-%d-%Y)
   clear
   echo "If you haven't done so already, connect your phone to usb now."
-  read -p "Press [Enter] to continue..."
-  DEVICES=$(adb get-state 2>&1)
-  if [ $DEVICES == device ]; then
-    FILE=$(find $OUT -type f -name "aokp_maguro_un*.zip" -printf %f)
+  read -p "${bldblu}Press [Enter] to continue...${txtrst}"
+  echo ""
+  if pidof -x adb > /dev/null
+  then
+    echo "ADB server already running, proceeding."
+    sleep 2
+  else
+    adb start-server
+  fi
+  DEVICES=$(adb get-state)
+  if [ $DEVICES == "device" ]; then
+    FILE=$(find $OUT -type f -name "cm-10.2*.zip" -printf %f)
     for zip in $FILE
     do
-      echo ""
-      echo "Pushing '$zip' to /sdcard/aokp-unofficial-$NOW-tristan202.zip"
       OPERATION="Push"
       Begin
-      adb push $OUT/$zip /data/media/0/aokp-unofficial-$NOW-tristan202.zip
+      echo ""
+      echo "Pushing '$zip' to /ext_card/cm-unofficial-$NOW-tristan202.zip"
+      adb push $OUT/$zip /ext_card/cm-unofficial-$NOW-tristan202.zip
       Finish
     done
   else

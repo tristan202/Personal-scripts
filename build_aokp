@@ -14,16 +14,23 @@ bldgrn=${txtbld}$(tput setaf 2) #  green
 bldblu=${txtbld}$(tput setaf 4) #  blue
 txtrst=$(tput sgr0)             # Reset
 
-if [ "$#" == "0" ]; then
-    echo ""
-    echo "Usage: $me {Model name, i.e. yuga|maguro}"
-    exit 1
-fi
-
-AOKP=$HOME/android/aokp
+VERSION=$2
 DEVICE=$1
 OUT=$AOKP/out/target/product/$DEVICE
 TRISTAN202=$HOME/android/tristan202
+
+if [ "$#" == "0" ]; then
+    echo ""
+    echo "Usage: $me {Model name, i.e. yuga|maguro} {Android version, i.e. jb-mr1|jb-mr2}"
+    exit 1
+fi
+
+if [ $VERSION == "jb-mr1" ]; then
+    AOKP=$HOME/android/aokp/jb-mr1
+elif [ $VERSION == "jb-mr2" ]; then
+    AOKP=$HOME/android/aokp/jb-mr2
+fi
+
 
 guake -r AOKP
 numlockx on
@@ -265,6 +272,7 @@ Sync_End ()
 
 Sync_Linaro ()
 {
+if [ $VERSION == "jb-mr1" ]; then
   echo ""
   echo "${bldblu}Would you like to apply Linaro build optimizations and toolchain?${txtrst}"
   echo ""
@@ -276,6 +284,9 @@ Sync_Linaro ()
     [Yy])  Linaro_Patch ;;
     *)   clear && echo "" && Sync_End ;;
   esac
+elif [ $VERSION == "jb-mr2" ]; then
+Main
+fi
 }
 
 Start_Build ()
@@ -398,7 +409,7 @@ Start_Push ()
     adb start-server
   fi
   DEVICES=$(adb get-state)
-  if [ $DEVICES == device ]; then
+  if [ $DEVICES == "device" ]; then
     FILE=$(find $OUT -type f -name "aokp_*_unofficial_*.zip" -printf %f)
     for zip in $FILE
     do
@@ -423,7 +434,7 @@ Reboot_Recovery ()
 {
   clear
   echo ""
-  echo "Rebooting to recovery. Happy flashing."
+  echo "${bldblu}Rebooting to recovery. Happy flashing.${txtrst}"
   adb reboot recovery
   read -p "${bldblu}Press [Enter] to return to menu...${txtrst}"
   Main
@@ -518,19 +529,21 @@ Main ()
     echo "${bldblu}$line${txtrst}"
     echo "AOKP maintenance and build script"
     echo ""
-    echo "Building for: ${bldblu}$DEVICE${txtrst}"
+    echo "Building ${bldblu}$VERSION${txtrst} for ${bldblu}$DEVICE${txtrst}"
     echo ""
     echo "Select from the following functions"
     echo ""
     echo "  ${bldgrn}S${txtrst}    Set up AOKP repo"
     echo "  ${bldblu}1${txtrst}    Sync AOKP repo"
     echo "  ${bldblu}2${txtrst}    Build AOKP"
-    echo "  ${bldblu}3${txtrst}    Push finished build to /sdcard/"
+    echo "  ${bldblu}3${txtrst}    Push finished build to device"
     echo "  ${bldblu}4${txtrst}    Reboot menu"
     echo "  ${bldblu}5${txtrst}    Pick cherries"
     echo "  ${bldblu}6${txtrst}    View the AOKP Gerrit"
     echo "  ${bldblu}L${txtrst}    Logcat"
+if [ $VERSION == "jb-mr1" ]; then
     echo "  ${bldblu}M${txtrst}    Merge repos"
+fi
     echo "  ${bldred}C${txtrst}    Clean build directory"
     echo "  ${bldblu}X${txtrst}    Exit"
     echo "${bldblu}$line${txtrst}"
