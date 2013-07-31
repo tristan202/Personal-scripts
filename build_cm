@@ -5,6 +5,15 @@
 #
 # tristan202 [ad] gmail.com
 
+me=`basename $0`
+
+# Colorize and add text parameters
+txtbld=$(tput bold)             # Bold
+bldred=${txtbld}$(tput setaf 1) #  red
+bldgrn=${txtbld}$(tput setaf 2) #  green
+bldblu=${txtbld}$(tput setaf 4) #  blue
+txtrst=$(tput sgr0)             # Reset
+
 if [ "$#" == "0" ]; then
     echo ""
     echo "Usage: $me {Model name, i.e. yuga|maguro}"
@@ -340,6 +349,8 @@ Main ()
     line='----------------------------------------'
     echo "$line"
     echo "CM maintenance and build script"
+    echo ""
+    echo "Building ${bldblu}CM-10.2${txtrst} for ${bldblu}$DEVICE${txtrst}"
     echo ""
     echo "Select from the following functions"
     echo ""
