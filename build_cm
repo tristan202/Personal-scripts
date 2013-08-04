@@ -13,6 +13,7 @@ bldred=${txtbld}$(tput setaf 1) #  red
 bldgrn=${txtbld}$(tput setaf 2) #  green
 bldblu=${txtbld}$(tput setaf 4) #  blue
 txtrst=$(tput sgr0)             # Reset
+line='----------------------------------------'
 
 if [ "$#" == "0" ]; then
     echo ""
@@ -29,7 +30,7 @@ guake -r CM-10.2
 numlockx on
 
 Output() {
-  echo "$(date -d "1970-01-01 UTC $2 seconds") - $1 $OPERATION""ing $3"
+  echo "${bldgrn}$(date -d "1970-01-01 UTC $2 seconds") - $1 $OPERATION""ing $3${txtrst}"
 }
 
 Duration() {
@@ -56,7 +57,7 @@ Init_Repo ()
   clear
   if [ ! -d $CM ]; then
     echo ""
-    echo "Setting up CM repo..."
+    echo "${bldblu}Setting up CM repo...${txtrst}"
     mkdir $CM
   fi
   if [ ! -d ~/bin ]; then
@@ -69,7 +70,7 @@ Init_Repo ()
     chmod a+x ~/bin/repo
   fi
   cd $CM && repo init -u git://github.com/CyanogenMod/android.git -b cm-10.2
-  read -p "Press [Enter] to return to menu..."
+  read -p "${bldblu}Press [Enter] to return to menu...${txtrst}"
   Main
 }
 
@@ -79,15 +80,16 @@ Start_Sync ()
   if [ -d $CM ]; then
     echo ""
     OPERATION="Sync"
-    echo "Syncing repo..."
+    echo "${bldblu}Syncing repo...${txtrst}"
     Begin
     echo ""
-    cd $TRISTAN202/android_frameworks_base && git cu
+    cd $CM/frameworks/base && git stash
     cd $CM && repo sync
+    cd $TRISTAN202/android_frameworks_base && cp -r * $CM/frameworks/base
     Finish
   else
     echo ""
-    echo "Directory does not exist. Check your 'CM' variable in line 5."
+    echo "${bldred}Directory does not exist. Check your 'CM' variable in line 5.${txtrst}"
     echo ""
     exit 0
   fi
@@ -97,9 +99,8 @@ Start_Sync ()
 Sync_End ()
 {
   echo ""
-  echo "Got any cherries to pick?"
-  prompt='Press [Y] if you do, or [N] to return to main menu.'
-  echo -n "$prompt"
+  echo "${bldblu}Got any cherries to pick?${txtrst}"
+  echo -n "Press [${bldgrn}Y${txtrst}] if you do, or [${bldred}N${txtrst}] to return to main menu."
   echo ""
   read -n1 char
   case "$char" in
@@ -115,9 +116,8 @@ Start_Build ()
   OPERATION="Build"
   files=$(ls $OUT/*.zip* 2> /dev/null | wc -l)
   if [ "$files" != "0" ]; then
-    echo "Previous builds detected in 'out' folder. Delete them now?"
-    prompt='Press [Y] to delete them, or [N] to start build without deleting them.'
-    echo -n "$prompt"
+    echo "${bldblu}Previous builds detected in 'out' folder. Delete them now?${txtrst}"
+    echo -n "Press [${bldgrn}Y${txtrst}] to delete them, or [${bldred}N${txtrst}] to start build without deleting them."
     echo ""
     read -n1 char
     case "$char" in
@@ -133,13 +133,22 @@ Build ()
 {
   clear
   echo ""
-  echo "Good, starting build..."
+  echo "${bldblu}Good, starting build...${txtrst}"
   Begin
   cd $CM
   rm -rf out/target/product/$DEVICE/system/build.prop
-  . build/envsetup.sh && brunch $DEVICE -j2
+  wait
+  echo ""
+  echo "${bldblu}Setting up environment${txtrst}"
+  echo ""
+  . build/envsetup.sh
+  wait
+  echo ""
+  echo "${bldblu}Brunching device${txtrst}"
+  echo ""
+  brunch $DEVICE -j2
   Finish
-  read -p "Press [Enter] to return to menu..."
+  read -p "${bldblu}Press [Enter] to return to menu...${txtrst}"
   Main
 }
 
@@ -147,9 +156,9 @@ Reboot_Bootloader ()
 {
   clear
   echo ""
-  echo "Rebooting to bootloader. Happy flashing."
+  echo "${bldblu}Rebooting to bootloader. Happy flashing.${txtrst}"
   adb reboot bootloader
-  read -p "Press [Enter] to return to menu..."
+  read -p "${bldblu}Press [Enter] to return to menu...${txtrst}"
   Main
 }
 
@@ -157,13 +166,13 @@ Start_Clobber ()
 {
   clear
   echo ""
-  echo "Cleaning build directory..."
+  echo "${bldblu}Cleaning build directory...${txtrst}"
   OPERATION="Clean"
   Begin
   cd $CM
   make clobber
   Finish
-  read -p "Press [Enter] to return to menu..."
+  read -p "${bldblu}Press [Enter] to return to menu...${txtrst}"
   Main
 }
 
@@ -171,14 +180,14 @@ Pick_Cherries ()
 {
   clear
   echo ""
-  echo "Picking cherries..."
+  echo "${bldblu}Picking cherries...${txtrst}"
   OPERATION="Cherrypick"
   tput cnorm
   echo ""
-  echo "Copy/paste the project folder, i.e. 'frameworks/base'"
+  echo "${bldblu}Copy/paste the project folder, i.e. 'frameworks/base'${txtrst}"
   echo -n ">" && read folder
   echo ""
-  echo "Now paste the cherry-pick git link, i.e. 'git fetch <someproject> refs/changes/... && git cherry-pick FETCH_HEAD'"
+  echo "${bldblu}Now paste the cherry-pick git link, i.e. 'git fetch <someproject> refs/changes/... && git cherry-pick FETCH_HEAD'${txtrst}"
   echo -n ">" && read cherry
   clear
   echo ""
@@ -188,9 +197,8 @@ Pick_Cherries ()
   $CHERRY && git cherry-pick FETCH_HEAD
   Finish
   echo ""
-  echo "Got any more cherries to pick?"
-  prompt='Press [Y] if you do, or [N] to return to main menu.'
-  echo -n "$prompt"
+  echo "${bldblu}Got any more cherries to pick?${txtrst}"
+  echo -n "Press [${bldgrn}Y${txtrst}] if you do, or [${bldred}N${txtrst}] to return to main menu."
   echo ""
   read -n1 char
   case "$char" in
@@ -198,7 +206,7 @@ Pick_Cherries ()
     [Yy])  Pick_Cherries ;;
     *)   Pick_Cherries ;;
   esac
-  read -p "Press [Enter] to return to menu..."
+  read -p "${bldblu}Press [Enter] to return to menu...${txtrst}"
   Main
 }
 
@@ -221,6 +229,50 @@ Start_Push ()
     FILE=$(find $OUT -type f -name "cm-10.2*.zip" -printf %f)
     for zip in $FILE
     do
+    echo "${bldblu}$line${txtrst}"
+    echo ""
+    echo "Push to internal or external?"
+    echo ""
+    echo "  ${bldblu}1${txtrst}    Internal (/sdcard)"
+    echo "  ${bldblu}2${txtrst}    External (/ext_card)"
+    echo ""
+    echo "${bldblu}$line${txtrst}"
+    echo -n "  "
+    read -n1 answer
+    case "$answer" in
+      [1]) Push_Int ;;
+      [2]) Push_Ext ;;
+    esac
+    done
+  else
+    echo ""
+    echo "${bldred}Are you completely sure you remembered to plug in both ends of the cable?${txtrst}"
+    read -p "${bldblu}Press [Enter] to try again...${txtrst}"
+    Start_Push
+  fi
+  read -p "${bldblu}Press [Enter] to return to menu...${txtrst}"
+  Main
+}
+
+Push_Int ()
+{
+    FILE=$(find $OUT -type f -name "cm-10.2*.zip" -printf %f)
+    for zip in $FILE
+    do
+      OPERATION="Push"
+      Begin
+      echo ""
+      echo "Pushing '$zip' to /sdcard/cm-unofficial-$NOW-tristan202.zip"
+      adb push $OUT/$zip /sdcard/cm-unofficial-$NOW-tristan202.zip
+      Finish
+    done
+}
+
+Push_Ext ()
+{
+    FILE=$(find $OUT -type f -name "cm-10.2*.zip" -printf %f)
+    for zip in $FILE
+    do
       OPERATION="Push"
       Begin
       echo ""
@@ -228,23 +280,15 @@ Start_Push ()
       adb push $OUT/$zip /ext_card/cm-unofficial-$NOW-tristan202.zip
       Finish
     done
-  else
-    echo ""
-    echo "Are you completely sure you remembered to plug in both ends of the cable?"
-    read -p "Press [Enter] to try again..."
-    Start_Push
-  fi
-  read -p "Press [Enter] to return to menu..."
-  Main
 }
 
 Reboot_Recovery ()
 {
   clear
   echo ""
-  echo "Rebooting to recovery. Happy flashing."
+  echo "${bldblu}Rebooting to recovery. Happy flashing.${txtrst}"
   adb reboot recovery
-  read -p "Press [Enter] to return to menu..."
+  read -p "${bldblu}Press [Enter] to return to menu...${txtrst}"
   Main
 }
 
@@ -254,10 +298,9 @@ Ask_Clobber ()
   do
     clear
     echo ""
-    echo "Are you sure you want to do this? It is rarely needed..."
+    echo "${bldblu}Are you sure you want to do this? It is rarely needed...${txtrst}"
     echo ""
-    prompt='Press [Y] to continue, or [N] to return to main menu.'
-    echo -n "$prompt"
+    echo -n "Press [${bldred}Y${txtrst}] to continue, or [${bldgrn}N${txtrst}] to return to main menu."
     read -n1 char
     case "$char" in
       [Nn]) Main ;;
@@ -271,13 +314,13 @@ Get_Prebuilts ()
 {
     clear
     echo ""
-    echo "Getting prebuilts. This only needs to be done once..."
+    echo "${bldblu}Getting prebuilts. This only needs to be done once...${txtrst}"
     echo ""
     OPERATION="Gett"
     Begin
     $CM/vendor/cm/get-prebuilts
     Finish
-    read -p "Press [Enter] to return to menu..."
+    read -p "${bldblu}Press [Enter] to return to menu...${txtrst}"
     Main
 }
 
@@ -288,8 +331,7 @@ Logcat_Menu ()
   while true
   do
     clear
-    line='----------------------------------------'
-    echo "$line"
+    echo "${bldblu}$line${txtrst}"
     echo "Logcat menu"
     echo ""
     echo "To stop the logcat, press ctrl+z"
@@ -298,9 +340,9 @@ Logcat_Menu ()
     echo ""
     echo "Select from the following functions"
     echo ""
-    echo "  1    Logcat to file"
-    echo "  2    Live logcat"
-    echo "$line"
+    echo "  ${bldblu}1${txtrst}    Logcat to file"
+    echo "  ${bldblu}2${txtrst}    Live logcat"
+    echo "${bldblu}$line${txtrst}"
     echo -n "  "
     read -n1 answer
     case "$answer" in
@@ -317,17 +359,16 @@ Reboot_Menu ()
   while true
   do
     clear
-    line='----------------------------------------'
-    echo "$line"
+    echo "${bldblu}$line${txtrst}"
     echo "Reboot menu"
     echo ""
     echo "Select from the following functions"
     echo ""
-    echo "  1    Reboot"
-    echo "  2    Reboot to recovery"
-    echo "  3    Reboot to bootloader"
-    echo "  4    Return to main menu"
-    echo "$line"
+    echo "  ${bldblu}1${txtrst}    Reboot"
+    echo "  ${bldblu}2${txtrst}    Reboot to recovery"
+    echo "  ${bldblu}3${txtrst}    Reboot to bootloader"
+    echo "  ${bldblu}4${txtrst}    Return to main menu"
+    echo "${bldblu}$line${txtrst}"
     echo -n "  "
     read -n1 answer
     case "$answer" in
@@ -346,26 +387,25 @@ Main ()
   while true
   do
     clear
-    line='----------------------------------------'
-    echo "$line"
+    echo "${bldblu}$line${txtrst}"
     echo "CM maintenance and build script"
     echo ""
     echo "Building ${bldblu}CM-10.2${txtrst} for ${bldblu}$DEVICE${txtrst}"
     echo ""
     echo "Select from the following functions"
     echo ""
-    echo "  S    Set up CM repo"
-    echo "  1    Sync CM repo"
-    echo "  2    Build CM"
-    echo "  3    Push finished build to /sdcard/"
-    echo "  4    Reboot menu"
-    echo "  5    Pick cherries"
-    echo "  6    View the CM Gerrit"
-    echo "  L    Logcat"
-    echo "  P    Get CM prebuilts"
-    echo "  C    Clean build directory"
-    echo "  X    Exit"
-    echo "$line"
+    echo "  ${bldgrn}S${txtrst}    Set up CM repo"
+    echo "  ${bldblu}1${txtrst}    Sync CM repo"
+    echo "  ${bldblu}2${txtrst}    Build CM"
+    echo "  ${bldblu}3${txtrst}    Push finished build to /sdcard/"
+    echo "  ${bldblu}4${txtrst}    Reboot menu"
+    echo "  ${bldblu}5${txtrst}    Pick cherries"
+    echo "  ${bldblu}6${txtrst}    View the CM Gerrit"
+    echo "  ${bldblu}L${txtrst}    Logcat"
+    echo "  ${bldblu}P${txtrst}    Get CM prebuilts"
+    echo "  ${bldred}C${txtrst}    Clean build directory"
+    echo "  ${bldblu}X${txtrst}    Exit"
+    echo "${bldblu}$line${txtrst}"
     tput civis
     echo -n "  "
     read -n1 answer
@@ -376,13 +416,13 @@ Main ()
       [3]) Start_Push;;
       [4]) Reboot_Menu;;
       [5]) Pick_Cherries;;
-      [6]) xdg-open http://gerrit.sudoservers.com/#/q/status:merged+branch:jb,n,z;;
+      [6]) xdg-open http://review.cyanogenmod.org/#/q/status:merged+branch:cm-10.2,n,z ;;
       [Cc]) Ask_Clobber;;
       [Pp]) Get_Prebuilts;;
       [Ll]) Logcat_Menu;;
       [Xx]) clear
         adb kill-server
-        echo "Live long and prosper... tristan202"
+        echo "${bldblu}Live long and prosper... tristan202${txtrst}"
         echo ""
         tput cnorm
 	numlockx off
