@@ -32,7 +32,7 @@ elif [ $VERSION == "jb-mr2" ]; then
 fi
 
 
-guake -r AOKP
+guake -r "AOKP $2"
 numlockx on
 
 Output() {
@@ -61,13 +61,6 @@ Finish() {
 Init_Repo ()
 {
   clear
-  echo "${bldblu}Installing required packages${txtrst}"
-  sudo add-apt-repository ppa:webupd8team/java
-  sudo apt-get update
-  sudo apt-get install git gnupg flex bison gperf build-essential zip curl libc6-dev libncurses5-dev:i386 x11proto-core-dev libx11-dev:i386 libreadline6-dev:i386 libgl1-mesa-glx:i386 libgl1-mesa-dev g++-multilib mingw32 tofrodos python-markdown libxml2-utils xsltproc zlib1g-dev:i386 pngcrush schedtool oracle-java6-installer
-  sudo update-java-alternatives -s java-6-oracle
-  sudo apt-get install oracle-java6-set-default
-  sudo ln -s /usr/lib/i386-linux-gnu/mesa/libGL.so.1 /usr/lib/i386-linux-gnu/libGL.so
   if [ ! -d $AOKP ]; then
     echo ""
     echo "${bldblu}Setting up AOKP repo...${txtrst}"
@@ -82,7 +75,7 @@ Init_Repo ()
     curl https://dl-ssl.google.com/dl/googlesource/git-repo/repo > ~/bin/repo
     chmod a+x ~/bin/repo
   fi
-  cd $AOKP && repo init -u git://github.com/AOKP/platform_manifest.git -b jb-mr1
+  cd $AOKP && repo init -u git://github.com/AOKP/platform_manifest.git -b $VERSION
   read -p "${bldblu}Press [Enter] to return to menu...${txtrst}"
   Main
 }
@@ -533,9 +526,9 @@ Main ()
     echo ""
     echo "Select from the following functions"
     echo ""
-    echo "  ${bldgrn}S${txtrst}    Set up AOKP repo"
-    echo "  ${bldblu}1${txtrst}    Sync AOKP repo"
-    echo "  ${bldblu}2${txtrst}    Build AOKP"
+    echo "  ${bldgrn}S${txtrst}    Set up AOKP $VERSION repo"
+    echo "  ${bldblu}1${txtrst}    Sync AOKP $VERSION repo"
+    echo "  ${bldblu}2${txtrst}    Build AOKP $VERSION"
     echo "  ${bldblu}3${txtrst}    Push finished build to device"
     echo "  ${bldblu}4${txtrst}    Reboot menu"
     echo "  ${bldblu}5${txtrst}    Pick cherries"

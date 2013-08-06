@@ -135,6 +135,9 @@ Build ()
   echo ""
   echo "${bldblu}Good, starting build...${txtrst}"
   Begin
+  if [ ! -f $CM/vendor/cm/proprietary/lib/armeabi/libjackpal-androidterm4.so ] && [ ! -f $CM/vendor/cm/proprietary/lib/mips/libjackpal-androidterm4.so ] && [ ! -f $CM/vendor/cm/proprietary/lib/x86/libjackpal-androidterm4.so ]; then
+    $CM/vendor/cm/get-prebuilts
+  fi
   cd $CM
   rm -rf out/target/product/$DEVICE/system/build.prop
   wait
@@ -394,15 +397,17 @@ Main ()
     echo ""
     echo "Select from the following functions"
     echo ""
-    echo "  ${bldgrn}S${txtrst}    Set up CM repo"
-    echo "  ${bldblu}1${txtrst}    Sync CM repo"
-    echo "  ${bldblu}2${txtrst}    Build CM"
-    echo "  ${bldblu}3${txtrst}    Push finished build to /sdcard/"
+    echo "  ${bldgrn}S${txtrst}    Set up CM 10.2 repo"
+    echo "  ${bldblu}1${txtrst}    Sync CM 10.2 repo"
+    if [ ! -f $CM/vendor/cm/proprietary/lib/armeabi/libjackpal-androidterm4.so ] && [ ! -f $CM/vendor/cm/proprietary/lib/mips/libjackpal-androidterm4.so ] && [ ! -f $CM/vendor/cm/proprietary/lib/x86/libjackpal-androidterm4.so ]; then
+      echo "  ${bldblu}P${txtrst}    Get CM prebuilts"
+    fi
+    echo "  ${bldblu}2${txtrst}    Build CM 10.2"
+    echo "  ${bldblu}3${txtrst}    Push finished build to device"
     echo "  ${bldblu}4${txtrst}    Reboot menu"
     echo "  ${bldblu}5${txtrst}    Pick cherries"
     echo "  ${bldblu}6${txtrst}    View the CM Gerrit"
     echo "  ${bldblu}L${txtrst}    Logcat"
-    echo "  ${bldblu}P${txtrst}    Get CM prebuilts"
     echo "  ${bldred}C${txtrst}    Clean build directory"
     echo "  ${bldblu}X${txtrst}    Exit"
     echo "${bldblu}$line${txtrst}"
