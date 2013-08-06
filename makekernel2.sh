@@ -32,9 +32,9 @@ Finish() {
   Duration
 }
 
-Build390() {
+Build399() {
 clear
-cd ~/source/linux-3.9.0
+cd ~/source/linux-3.9.9-ck1
 echo ""
 prompt="Do you want to run xconfig? Press [Y] if you do, or [N] to skip it."
 echo -n "$prompt"
@@ -57,9 +57,9 @@ read -p "Press [Enter] to continue."
 Main
 }
 
-Build3810() {
+Build310() {
 clear
-cd ~/source/linux-3.8.11-ck1
+cd ~/source/linux-3.10.3-ck1
 echo ""
 prompt="Do you want to run xconfig? Press [Y] if you do, or [N] to skip it."
 echo -n "$prompt"
@@ -74,19 +74,6 @@ echo -n "$prompt"
  ;;
     esac
 echo ""
-Finish
-echo ""
-echo "Done!"
-echo ""
-read -p "Press [Enter] to continue."
-Main
-}
-
-Sync ()
-{
-clear
-Begin
-cd ~/source/linux-3.9.0 && git pull
 Finish
 echo ""
 echo "Done!"
@@ -110,6 +97,7 @@ sleep 1
 echo "             1"
 sleep 1
 echo "Going down for reboot..."
+sleep 1
 sudo reboot
 }
 
@@ -125,9 +113,7 @@ Main ()
     echo ""
     echo "Select from the following functions"
     echo ""
-    echo "  S    Sync 3.9 repo"
-    echo "  1    Build 3.9.0 kernel"
-    echo "  2    Build 3.8.11-ck1 kernel"
+    echo "  1    Build 3.10.3 kernel"
     echo "  R    Reboot to test your new kernel"
     echo "  X    Exit"
     echo "$line"
@@ -135,9 +121,7 @@ Main ()
     echo -n "  "
     read -n1 answer
     case "$answer" in
-      [Ss]) Sync;;
-      [1]) Build390;;
-      [2]) Build3810;;
+      [1]) Build310;;
       [Rr]) Reboot;;
       [Xx]) clear
         echo "Live long and prosper... tristan202"

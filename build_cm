@@ -16,9 +16,9 @@ txtrst=$(tput sgr0)             # Reset
 line='----------------------------------------'
 
 if [ "$#" == "0" ]; then
-    echo ""
-    echo "Usage: $me {Model name, i.e. yuga|maguro}"
-    exit 1
+  echo ""
+  echo "Usage: $me {Model name, i.e. yuga|maguro}"
+  exit 1
 fi
 
 CM=$HOME/android/cm10.2
@@ -232,20 +232,20 @@ Start_Push ()
     FILE=$(find $OUT -type f -name "cm-10.2*.zip" -printf %f)
     for zip in $FILE
     do
-    echo "${bldblu}$line${txtrst}"
-    echo ""
-    echo "Push to internal or external?"
-    echo ""
-    echo "  ${bldblu}1${txtrst}    Internal (/sdcard)"
-    echo "  ${bldblu}2${txtrst}    External (/ext_card)"
-    echo ""
-    echo "${bldblu}$line${txtrst}"
-    echo -n "  "
-    read -n1 answer
-    case "$answer" in
-      [1]) Push_Int ;;
-      [2]) Push_Ext ;;
-    esac
+      echo "${bldblu}$line${txtrst}"
+      echo ""
+      echo "Push to internal or external?"
+      echo ""
+      echo "  ${bldblu}1${txtrst}    Internal (/sdcard)"
+      echo "  ${bldblu}2${txtrst}    External (/ext_card)"
+      echo ""
+      echo "${bldblu}$line${txtrst}"
+      echo -n "  "
+      read -n1 answer
+      case "$answer" in
+        [1]) Push_Int ;;
+        [2]) Push_Ext ;;
+      esac
     done
   else
     echo ""
@@ -259,30 +259,30 @@ Start_Push ()
 
 Push_Int ()
 {
-    FILE=$(find $OUT -type f -name "cm-10.2*.zip" -printf %f)
-    for zip in $FILE
-    do
-      OPERATION="Push"
-      Begin
-      echo ""
-      echo "Pushing '$zip' to /sdcard/cm-unofficial-$NOW-tristan202.zip"
-      adb push $OUT/$zip /sdcard/cm-unofficial-$NOW-tristan202.zip
-      Finish
-    done
+  FILE=$(find $OUT -type f -name "cm-10.2*.zip" -printf %f)
+  for zip in $FILE
+  do
+    OPERATION="Push"
+    Begin
+    echo ""
+    echo "Pushing '$zip' to /sdcard/cm-unofficial-$NOW-tristan202.zip"
+    adb push $OUT/$zip /sdcard/cm-unofficial-$NOW-tristan202.zip
+    Finish
+  done
 }
 
 Push_Ext ()
 {
-    FILE=$(find $OUT -type f -name "cm-10.2*.zip" -printf %f)
-    for zip in $FILE
-    do
-      OPERATION="Push"
-      Begin
-      echo ""
-      echo "Pushing '$zip' to /ext_card/cm-unofficial-$NOW-tristan202.zip"
-      adb push $OUT/$zip /ext_card/cm-unofficial-$NOW-tristan202.zip
-      Finish
-    done
+  FILE=$(find $OUT -type f -name "cm-10.2*.zip" -printf %f)
+  for zip in $FILE
+  do
+    OPERATION="Push"
+    Begin
+    echo ""
+    echo "Pushing '$zip' to /ext_card/cm-unofficial-$NOW-tristan202.zip"
+    adb push $OUT/$zip /ext_card/cm-unofficial-$NOW-tristan202.zip
+    Finish
+  done
 }
 
 Reboot_Recovery ()
@@ -315,16 +315,16 @@ Ask_Clobber ()
 
 Get_Prebuilts ()
 {
-    clear
-    echo ""
-    echo "${bldblu}Getting prebuilts. This only needs to be done once...${txtrst}"
-    echo ""
-    OPERATION="Gett"
-    Begin
-    $CM/vendor/cm/get-prebuilts
-    Finish
-    read -p "${bldblu}Press [Enter] to return to menu...${txtrst}"
-    Main
+  clear
+  echo ""
+  echo "${bldblu}Getting prebuilts. This only needs to be done once...${txtrst}"
+  echo ""
+  OPERATION="Gett"
+  Begin
+  $CM/vendor/cm/get-prebuilts
+  Finish
+  read -p "${bldblu}Press [Enter] to return to menu...${txtrst}"
+  Main
 }
 
 Logcat_Menu ()
@@ -397,7 +397,9 @@ Main ()
     echo ""
     echo "Select from the following functions"
     echo ""
-    echo "  ${bldgrn}S${txtrst}    Set up CM 10.2 repo"
+    if [ ! -f $CM/.repo/manifest.xml ]; then
+      echo "  ${bldgrn}S${txtrst}    Set up CM 10.2 repo"
+    fi
     echo "  ${bldblu}1${txtrst}    Sync CM 10.2 repo"
     if [ ! -f $CM/vendor/cm/proprietary/lib/armeabi/libjackpal-androidterm4.so ] && [ ! -f $CM/vendor/cm/proprietary/lib/mips/libjackpal-androidterm4.so ] && [ ! -f $CM/vendor/cm/proprietary/lib/x86/libjackpal-androidterm4.so ]; then
       echo "  ${bldblu}P${txtrst}    Get CM prebuilts"
@@ -430,7 +432,7 @@ Main ()
         echo "${bldblu}Live long and prosper... tristan202${txtrst}"
         echo ""
         tput cnorm
-	numlockx off
+        numlockx off
       break ;;
     esac
   done

@@ -20,15 +20,15 @@ OUT=$AOKP/out/target/product/$DEVICE
 TRISTAN202=$HOME/android/tristan202
 
 if [ "$#" == "0" ]; then
-    echo ""
-    echo "Usage: $me {Model name, i.e. yuga|maguro} {Android version, i.e. jb-mr1|jb-mr2}"
-    exit 1
+  echo ""
+  echo "Usage: $me {Model name, i.e. yuga|maguro} {Android version, i.e. jb-mr1|jb-mr2}"
+  exit 1
 fi
 
 if [ $VERSION == "jb-mr1" ]; then
-    AOKP=$HOME/android/aokp/jb-mr1
-elif [ $VERSION == "jb-mr2" ]; then
-    AOKP=$HOME/android/aokp/jb-mr2
+  AOKP=$HOME/android/aokp/jb-mr1
+  elif [ $VERSION == "jb-mr2" ]; then
+  AOKP=$HOME/android/aokp/jb-mr2
 fi
 
 
@@ -61,7 +61,7 @@ Finish() {
 Init_Repo ()
 {
   clear
-  if [ ! -d $AOKP ]; then
+  if [ ! -f $AOKP/.repo/manifest.xml ]; then
     echo ""
     echo "${bldblu}Setting up AOKP repo...${txtrst}"
     mkdir $AOKP
@@ -108,12 +108,12 @@ Start_Sync ()
 Linaro_Patch ()
 {
   #Windows X Linaro patch for Xperia Z
-
+  
   clear
   OPERATION="Sync"
   echo "${bldblu}Applying Linaro patches and installing toolchain...${txtrst}"
   Begin
-
+  
   #Replace Google's Toolchain with Linaro's
   cp $TRISTAN202/android-toolchain-eabi-4.8-2013.06-x86.tar.bz2 $AOKP/prebuilts/gcc/linux-x86/arm
   cd $AOKP/prebuilts/gcc/linux-x86/arm
@@ -121,94 +121,94 @@ Linaro_Patch ()
   rm android-toolchain-eabi-4.8-2013.06-x86.tar.bz2
   mv arm-eabi-4.6 arm-eabi-4.6-google
   mv android-toolchain-eabi arm-eabi-4.6
-
+  
   #Linaro -O3 optimizations for ROM building
   cd $AOKP/build
   git fetch https://github.com/tristan202/build.git && git cherry-pick 9f3ed433fb31b176dd826554eb57cba7fa952706
-
+  
   #Linaro cortex string handling routines optimizations
   cd $AOKP/bionic/
   git fetch https://github.com/CarbonDev/android_bionic.git && git cherry-pick a1c824da0d34fbcc71fe8dd95ff618f4bba3d753
   git fetch https://github.com/CarbonDev/android_bionic.git && git cherry-pick a046eb1144eb947f69ad65bcc1a97498d8075741
   git fetch https://github.com/CarbonDev/android_bionic.git && git cherry-pick b66fa68efbf907b8f9e6fcafa31e877cc3e1c565
-
+  
   #TWRP Recovery Linaro fix
   cd $AOKP/bootable/recovery/
   git fetch https://github.com/WindowsX/Team-Win-Recovery-Project.git && git cherry-pick fc866246fe05d743ac5917ee44dbdffe1f620714
   git fetch https://github.com/WindowsX/Team-Win-Recovery-Project.git && git cherry-pick 4e0cc5ba0b883413834a81d32d9501a802022053
-
+  
   cd $AOKP/external/clang
   git fetch https://github.com/WindowsX/android_external_clang.git && git cherry-pick 81d67da93bd3afa9ce7f5064562ddb0c91ba0a0c
-
+  
   cd $AOKP/dalvik/
   git fetch https://github.com/WindowsX/android_dalvik.git && git cherry-pick 1c5822ece7f43f13e38ca7d58bc0d5b7f9c79f0f
-
+  
   cd $AOKP/frameworks/compile/mclinker
   git fetch https://github.com/WindowsX/android_frameworks_compile_mclinker.git && git cherry-pick 1b1004f75cd7493e28f86690ff647cb36b130d64
-
+  
   cd $AOKP/external/mesa3d
   git fetch https://github.com/WindowsX/android_external_mesa3d.git && git cherry-pick 08ea469ce99454bbf177b4257a74af392fe23ba6
-
+  
   cd $AOKP/external/linux-tools-perf
   git fetch https://github.com/WindowsX/android_external_linux-tools-perf.git && git cherry-pick 0eb6e3237292092d4fcc05ecd5bd16425110fa3e
-
+  
   cd $AOKP/hardware/qcom/media-caf
   git fetch https://github.com/WindowsX/android_hardware_qcom_media-caf.git && git cherry-pick 4d64d4a65f4c04bce4ef3e373681337b967d4fb9
-
+  
   #Trailblazerz Linaro patches
-
+  
   cd $AOKP/external/e2fsprogs/
   git fetch https://github.com/trailblazerz/android_external_e2fsprogs.git && git cherry-pick 0e540a3cf8c4dd22205ef39a6f9d6edfa0d1183a
-
+  
   cd $AOKP/external/stlport/
   git fetch https://github.com/trailblazerz/android_external_stlport.git && git cherry-pick 05c206e22eddf9d09b3c497721a94aa23b922811
-
+  
   cd $AOKP/external/openssl/
   git fetch https://github.com/trailblazerz/android_external_openssl.git && git cherry-pick b43b3c2935e8f27b74c53be2f67fe49f3a515228
-
+  
   cd $AOKP/frameworks/base/
   git fetch https://github.com/trailblazerz/android_frameworks_base.git && git cherry-pick 3c5ec8d73f8c8dd2b2b84d999c8ad4911566c079
-
+  
   cd $AOKP/external/skia/
   git fetch https://github.com/trailblazerz/android_external_skia.git && git cherry-pick d496d1bb506b925513d8f5d6e4d8a6c0a67cf7d8
-
+  
   cd $AOKP/frameworks/av/
   git fetch https://github.com/trailblazerz/android_frameworks_av.git && git cherry-pick 634477166074d503cc8df571315b3b5c4bf4a08d
-
+  
   cd $AOKP/frameworks/ex/
   git fetch https://github.com/trailblazerz/android_frameworks_ex.git && git cherry-pick aa5da9c8956f09072bb9e783dee2a67798663bb6
-
+  
   cd $AOKP/frameworks/wilhelm/
   git fetch https://github.com/trailblazerz/android_frameworks_wilhelm.git && git cherry-pick 07251f657bb21080ab96093dc5275b37589bbf37
   git fetch https://github.com/trailblazerz/android_frameworks_wilhelm.git && git cherry-pick 48cc6405503668dc38b4713a98e08d1174b2340c
-
+  
   cd $AOKP/frameworks/rs/
   git fetch https://github.com/trailblazerz/android_frameworks_rs.git && git cherry-pick f276ba5f5435d6406ef07030e4b1cf613699c62e
-
+  
   cd $AOKP/external/dnsmasq/
   git fetch https://github.com/trailblazerz/android_external_dnsmasq.git && git cherry-pick 446fceadb803f8c28de809907d55dfab82e9827f
-
+  
   cd $AOKP/external/openssh/
   git fetch https://github.com/trailblazerz/android_external_openssh.git && git cherry-pick d6a26a88f1f4a39d107c6b6e0296545b9852a50d
-
+  
   cd $AOKP/frameworks/native/
   git fetch https://github.com/trailblazerz/android_frameworks_native.git && git cherry-pick d75d8d1570bebf8f5de01754fa24e51ba3695999
-
+  
   cd $AOKP/hardware/qcom/display-caf/
   git fetch https://github.com/trailblazerz/android_hardware_qcom_display-caf.git && git cherry-pick 54b089f6a8d4313edca634c51ebdbe178f8b90e3
   git fetch https://github.com/trailblazerz/android_hardware_qcom_display-caf.git && git cherry-pick d0a861554a0f6d13d3ac6a2aa6b81533f9c3b62d
   git fetch https://github.com/trailblazerz/android_hardware_qcom_display-caf.git && git cherry-pick a9df638dda54472bb7f841b051f2d299316f6b51
-
+  
   cd $AOKP/libcore
   git fetch https://github.com/trailblazerz/android_libcore.git && git cherry-pick 40617f103bf38e61c43edee4c4ecbc2ea4aaedea
-
+  
   cd $AOKP/external/webkit/
   git fetch https://github.com/trailblazerz/android_external_webkit.git && git cherry-pick bb873522bc0ed7a4aaa3552527872ece198db104
-
+  
   Finish
   read -p "${bldblu}Press [Enter] to return to menu...${txtrst}"
   Main
-
+  
 }
 
 Merge_repos ()
@@ -265,21 +265,21 @@ Sync_End ()
 
 Sync_Linaro ()
 {
-if [ $VERSION == "jb-mr1" ]; then
-  echo ""
-  echo "${bldblu}Would you like to apply Linaro build optimizations and toolchain?${txtrst}"
-  echo ""
-  echo -n "Press [${bldred}Y${txtrst}] if you do, or [${bldred}N${txtrst}] to return to main menu."
-  echo ""
-  read -n1 char
-  case "$char" in
-    [Nn]) Main ;;
-    [Yy])  Linaro_Patch ;;
-    *)   clear && echo "" && Sync_End ;;
-  esac
-elif [ $VERSION == "jb-mr2" ]; then
-Main
-fi
+  if [ $VERSION == "jb-mr1" ]; then
+    echo ""
+    echo "${bldblu}Would you like to apply Linaro build optimizations and toolchain?${txtrst}"
+    echo ""
+    echo -n "Press [${bldred}Y${txtrst}] if you do, or [${bldred}N${txtrst}] to return to main menu."
+    echo ""
+    read -n1 char
+    case "$char" in
+      [Nn]) Main ;;
+      [Yy])  Linaro_Patch ;;
+      *)   clear && echo "" && Sync_End ;;
+    esac
+    elif [ $VERSION == "jb-mr2" ]; then
+    Main
+  fi
 }
 
 Start_Build ()
@@ -526,7 +526,9 @@ Main ()
     echo ""
     echo "Select from the following functions"
     echo ""
-    echo "  ${bldgrn}S${txtrst}    Set up AOKP $VERSION repo"
+    if [ ! -f $AOKP/.repo/manifest.xml ]; then
+      echo "  ${bldgrn}S${txtrst}    Set up AOKP $VERSION repo"
+    fi
     echo "  ${bldblu}1${txtrst}    Sync AOKP $VERSION repo"
     echo "  ${bldblu}2${txtrst}    Build AOKP $VERSION"
     echo "  ${bldblu}3${txtrst}    Push finished build to device"
@@ -534,9 +536,9 @@ Main ()
     echo "  ${bldblu}5${txtrst}    Pick cherries"
     echo "  ${bldblu}6${txtrst}    View the AOKP Gerrit"
     echo "  ${bldblu}L${txtrst}    Logcat"
-if [ $VERSION == "jb-mr1" ]; then
-    echo "  ${bldblu}M${txtrst}    Merge repos"
-fi
+    if [ $VERSION == "jb-mr1" ]; then
+      echo "  ${bldblu}M${txtrst}    Merge repos"
+    fi
     echo "  ${bldred}C${txtrst}    Clean build directory"
     echo "  ${bldblu}X${txtrst}    Exit"
     echo "${bldblu}$line${txtrst}"
@@ -559,7 +561,7 @@ fi
         echo "Live long and prosper... tristan202"
         echo ""
         tput cnorm
-	numlockx off
+        numlockx off
       break ;;
     esac
   done

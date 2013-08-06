@@ -7,23 +7,26 @@
 #The scripts basename
 me=`basename $0`
 
-#Query the vga port, and enable if connected.
-if [ "$1" = "on" ]; then
-	if disper -l | grep "display CRT1" > /dev/null ; then
-		#disper -r 1280x768 -c
-		xrandr --output LVDS --mode 1366x768 --rate 60 --output CRT1 --mode 1280x768 --pos 0x768 --rate 60
+case $1 in
+	on)
+		#Query the vga port, and enable if connected.
+		if xrandr | grep "CRT1 connected" > /dev/null ; then
+		xrandr --output LVDS --mode 1366x768 --output CRT1 --mode 1280x768 --below LVDS
+		nitrogen --restore
 		echo "TV-Out enabled"
-	else
-		echo "No secondary screen detected."
-	fi
+			else
+				echo "No secondary screen detected."
+		fi
+	;;
+	off)
+		#Disable tv-out, and restore screen resolution.
+		xrandr --output LVDS --mode 1366x768 --rate 60 --output CRT1 --off
+		echo "TV-Out disabled"
+	;;
+	*)
+		echo "Usage: dual {on|off}"
+		exit 1
+	;;
+esac
 
-#Disable tv-out, and restore screen resolution.
-elif [ "$1" = "off" ]; then
-	#disper -r 1366x768 -s
-	xrandr --output LVDS --mode 1366x768 --rate 60 --output CRT1 --off
-	echo "TV-Out disabled"
 
-#Print an error message if no argument is given.
-elif [ -z "$1" ]; then
-	echo "Usage: $me enable/disable"
-fi
