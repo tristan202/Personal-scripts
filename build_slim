@@ -1,5 +1,5 @@
 #!/bin/bash
-# Menu to maintain and build CM.
+# Menu to maintain and build SLIM.
 # Written by tristan202. Feel free to use, modify and distribute the script.
 # Just remember to give proper credit
 #
@@ -23,16 +23,17 @@ if [ "$#" == "0" ]; then
 fi
 
 # A few variables
-CM=$HOME/android/cm11
+SLIM=$HOME/android/slimkat
 DEVICE=$1
-OUT=$CM/out/target/product/$DEVICE
+OUT=$SLIM/out/target/product/$DEVICE
 TRISTAN202=$HOME/android/tristan202
+VENDORADD=$TRISTAN202/vendor_slim_torch
 
 # Current time
 NOWFULL=$(date +%b-%d-%Y-%H.%M)
 NOWDATE=$(date +%b-%d-%Y)
 # Rename the Guake tab, end enable numlock
-guake -r CM-11
+guake -r "Slimkat 4.4"
 
 if [ -x /usr/bin/numlockx ]; then
   /usr/bin/numlockx on
@@ -64,21 +65,22 @@ Finish() {
 Init_Repo ()
 {
   clear
-  if [ ! -d $CM ]; then
+  if [ ! -d $SLIM ]; then
     echo ""
-    echo "${bldblu}Setting up CM repo...${txtrst}"
-    mkdir $CM
+    echo "${bldblu}Setting up SLIM repo...${txtrst}"
+    mkdir $SLIM
   fi
   if [ ! -d ~/bin ]; then
     mkdir ~/bin
     PATH=~/bin:$PATH
-    curl https://dl-ssl.google.com/dl/googlesource/git-repo/repo > ~/bin/repo
-  fi
-  if [ ! -f ~/bin/repo ]; then
-    curl https://dl-ssl.google.com/dl/googlesource/git-repo/repo > ~/bin/repo
+    curl http://commondatastorage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
     chmod a+x ~/bin/repo
   fi
-  cd $CM && repo init -u git://github.com/CyanogenMod/android.git -b cm-11.0
+  if [ ! -f ~/bin/repo ]; then
+    curl http://commondatastorage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
+    chmod a+x ~/bin/repo
+  fi
+  cd $SLIM && repo init -u git://github.com/SlimRoms/platform_manifest.git -b kk4.4
   read -p "${bldblu}Press [Enter] to return to menu...${txtrst}"
   Main
 }
@@ -86,18 +88,18 @@ Init_Repo ()
 Start_Sync ()
 {
   clear
-  if [ -d $CM ]; then
+  if [ -d $SLIM ]; then
     echo ""
     OPERATION="Sync"
     Begin
     echo ""
     echo "${bldblu}Syncing repo...${txtrst}"
-    cd $CM && repo sync
+    cd $SLIM && repo sync
     echo ""
     Finish
   else
     echo ""
-    echo "${bldred}Directory does not exist. Check your 'CM' variable in line 5.${txtrst}"
+    echo "${bldred}Directory does not exist. Check your 'SLIM' variable in line 26.${txtrst}"
     echo ""
     exit 0
   fi
@@ -143,10 +145,7 @@ Build ()
   echo ""
   echo "${bldblu}Good, starting build...${txtrst}"
   Begin
-  if [ ! -f $CM/vendor/cm/proprietary/lib/armeabi/libjackpal-androidterm4.so ] && [ ! -f $CM/vendor/cm/proprietary/lib/mips/libjackpal-androidterm4.so ] && [ ! -f $CM/vendor/cm/proprietary/lib/x86/libjackpal-androidterm4.so ]; then
-    $CM/vendor/cm/get-prebuilts
-  fi
-  cd $CM
+  cd $SLIM
   rm -rf out/target/product/$DEVICE/system/build.prop
   wait
   echo ""
@@ -188,7 +187,7 @@ Start_Clobber ()
   echo "${bldblu}Cleaning build directory...${txtrst}"
   OPERATION="Clean"
   Begin
-  cd $CM
+  cd $SLIM
   make clobber
   Finish
   read -p "${bldblu}Press [Enter] to return to menu...${txtrst}"
@@ -211,7 +210,7 @@ Pick_Cherries ()
   clear
   echo ""
   Begin
-  cd $CM/$folder
+  cd $SLIM/$folder
   CHERRY=${cherry%%??????????????????????????????}
   $CHERRY && git cherry-pick FETCH_HEAD
   Finish
@@ -244,7 +243,7 @@ Start_Push ()
   fi
   DEVICES=$(adb get-state)
   if [ $DEVICES == "device" ]; then
-    FILE=$(find $OUT -type f -name "cm-11*.zip" -printf %f)
+    FILE=$(find $OUT -type f -name "Slim-*.zip" -printf %f)
     for zip in $FILE
     do
       echo "${bldblu}$line${txtrst}"
@@ -276,30 +275,30 @@ Start_Push ()
 
 Push_Int ()
 {
-  FILE=$(find $OUT -type f -name "cm-11*.zip" -printf %f)
+  FILE=$(find $OUT -type f -name "Slim-*.zip" -printf %f)
   for zip in $FILE
   do
     clear
     OPERATION="Push"
     Begin
     echo ""
-    echo "Pushing '$zip' to /sdcard/cm-unofficial-$NOWDATE-tristan202.zip"
-    adb push $OUT/$zip /sdcard/cm-unofficial-$NOWDATE-tristan202.zip
+    echo "Pushing '$zip' to /sdcard/slim-unofficial-$NOWDATE-tristan202.zip"
+    adb push $OUT/$zip /sdcard/slim-unofficial-$NOWDATE-tristan202.zip
     Finish
   done
 }
 
 Push_Ext ()
 {
-  FILE=$(find $OUT -type f -name "cm-11*.zip" -printf %f)
+  FILE=$(find $OUT -type f -name "Slim-*.zip" -printf %f)
   for zip in $FILE
   do
     clear
     OPERATION="Push"
     Begin
     echo ""
-    echo "Pushing '$zip' to /ext_card/cm-unofficial-$NOWDATE-tristan202.zip"
-    adb push $OUT/$zip /ext_card/cm-unofficial-$NOWDATE-tristan202.zip
+    echo "Pushing '$zip' to /ext_card/slim-unofficial-$NOWDATE-tristan202.zip"
+    adb push $OUT/$zip /ext_card/slim-unofficial-$NOWDATE-tristan202.zip
     Finish
   done
 }
@@ -338,20 +337,6 @@ Ask_Clobber ()
       *) Ask_Clobber ;;
     esac
   done
-}
-
-Get_Prebuilts ()
-{
-  clear
-  echo ""
-  echo "${bldblu}Getting prebuilts. This only needs to be done once...${txtrst}"
-  echo ""
-  OPERATION="Gett"
-  Begin
-  $CM/vendor/cm/get-prebuilts
-  Finish
-  read -p "${bldblu}Press [Enter] to return to menu...${txtrst}"
-  Main
 }
 
 Logcat_Menu ()
@@ -417,24 +402,20 @@ Main ()
   do
     clear
     echo "${bldblu}$line${txtrst}"
-    echo "CM maintenance and build script"
+    echo "SLIM maintenance and build script"
     echo ""
-    echo "Building ${bldblu}CM-11${txtrst} for ${bldblu}$DEVICE${txtrst}"
+    echo "Building ${bldblu}Slimkat 4.4${txtrst} for ${bldblu}$DEVICE${txtrst}"
     echo ""
     echo "Select from the following functions"
     echo ""
-    if [ ! -f $CM/.repo/manifest.xml ]; then
-      echo "  ${bldgrn}S${txtrst}    Set up CM 11 repo"
+    if [ ! -f $SLIM/.repo/manifest.xml ]; then
+      echo "  ${bldgrn}S${txtrst}    Set up Slimkat 4.4 repo"
     fi
-    echo "  ${bldblu}1${txtrst}    Sync CM 11 repo"
-    if [ ! -f $CM/vendor/cm/proprietary/lib/armeabi/libjackpal-androidterm4.so ] && [ ! -f $CM/vendor/cm/proprietary/lib/mips/libjackpal-androidterm4.so ] && [ ! -f $CM/vendor/cm/proprietary/lib/x86/libjackpal-androidterm4.so ]; then
-      echo "  ${bldblu}P${txtrst}    Get CM prebuilts"
-    fi
-    echo "  ${bldblu}2${txtrst}    Build CM 11"
+    echo "  ${bldblu}1${txtrst}    Sync Slimkat 4.4 repo"
+    echo "  ${bldblu}2${txtrst}    Build Slimkat 4.4"
     echo "  ${bldblu}3${txtrst}    Push finished build to device"
     echo "  ${bldblu}4${txtrst}    Reboot menu"
     echo "  ${bldblu}5${txtrst}    Pick cherries"
-    echo "  ${bldblu}6${txtrst}    View the CM Gerrit"
     echo "  ${bldblu}L${txtrst}    Logcat"
     echo "  ${bldred}C${txtrst}    Clean build directory"
     echo "  ${bldblu}X${txtrst}    Exit"
@@ -449,9 +430,7 @@ Main ()
       [3]) Start_Push;;
       [4]) Reboot_Menu;;
       [5]) Pick_Cherries;;
-      [6]) xdg-open http://review.cyanogenmod.org/#/q/status:merged+branch:cm-11,n,z ;;
       [Cc]) Ask_Clobber;;
-      [Pp]) Get_Prebuilts;;
       [Ll]) Logcat_Menu;;
       [Xx]) clear
         adb kill-server
