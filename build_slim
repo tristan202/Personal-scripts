@@ -1,5 +1,5 @@
 #!/bin/bash
-# Menu to maintain and build SLIM.
+# Menu to maintain and build SLIM Rom.
 # Written by tristan202. Feel free to use, modify and distribute the script.
 # Just remember to give proper credit
 #
@@ -26,12 +26,13 @@ fi
 SLIM=$HOME/android/slimkat
 DEVICE=$1
 OUT=$SLIM/out/target/product/$DEVICE
-TRISTAN202=$HOME/android/tristan202
-VENDORADD=$TRISTAN202/vendor_slim_torch
+
+# Use Ccache to speedup rebuilds
+export USE_CCACHE=1
 
 # Current time
 NOWFULL=$(date +%b-%d-%Y-%H.%M)
-NOWDATE=$(date +%b-%d-%Y)
+
 # Rename the Guake tab, end enable numlock
 guake -r "Slimkat 4.4"
 
@@ -93,8 +94,15 @@ Start_Sync ()
     OPERATION="Sync"
     Begin
     echo ""
+    echo ""
+    echo "${bldblu}Stashing local changes to frameworks_base...${txtrst}"
+    cd $SLIM/frameworks/base && git stash
+    echo ""
     echo "${bldblu}Syncing repo...${txtrst}"
     cd $SLIM && repo sync
+    echo ""
+    echo "${bldblu}Cherrypicking I9ebcf22f85957f61caefb14e0efd4cf2978d92cd from http://review.cyanogenmod.org/#/c/54855/${txtrst}"
+    cd $SLIM/frameworks/base && git fetch http://review.cyanogenmod.org/CyanogenMod/android_frameworks_base refs/changes/55/54855/3 && git cherry-pick FETCH_HEAD
     echo ""
     Finish
   else
@@ -275,31 +283,62 @@ Start_Push ()
 
 Push_Int ()
 {
+  TargetDir=/sdcard
   FILE=$(find $OUT -type f -name "Slim-*.zip" -printf %f)
   for zip in $FILE
   do
     clear
     OPERATION="Push"
     Begin
+    SIZE=$( stat -c %s $OUT/$zip )
+    file=$( basename $zip )
     echo ""
-    echo "Pushing '$zip' to /sdcard/slim-unofficial-$NOWDATE-tristan202.zip"
-    adb push $OUT/$zip /sdcard/slim-unofficial-$NOWDATE-tristan202.zip
+    echo "Pushing '$zip' to $TargetDir/$zip"
+    echo ""
+    coproc ADB_PUSH ( set +m
+                      adb push $OUT/$zip $TargetDir/$file 2> /dev/null || \
+                      echo "Error: failed"
+                      set -m
+                    )
+    until [ "$ADB_PUSH_PID" = "" ];do
+        sleep 1
+        adb shell stat -t $TargetDir/$file | \
+        awk '{printf "\r[ %5.1f%% ] ( %s/%s )",($2/'$SIZE')*100,$2/1024,'$SIZE'/1024}'
+    done
+    echo ""
+    echo ""
     Finish
+    echo ""
   done
 }
 
 Push_Ext ()
 {
+  TargetDir=/ext_card
   FILE=$(find $OUT -type f -name "Slim-*.zip" -printf %f)
   for zip in $FILE
   do
     clear
     OPERATION="Push"
     Begin
+    SIZE=$( stat -c %s $OUT/$zip )
+    file=$( basename $zip )
     echo ""
-    echo "Pushing '$zip' to /ext_card/slim-unofficial-$NOWDATE-tristan202.zip"
-    adb push $OUT/$zip /ext_card/slim-unofficial-$NOWDATE-tristan202.zip
+    echo "Pushing '$zip' to $TargetDir/$zip"
+    echo ""
+    coproc ADB_PUSH ( set +m
+                      adb push $OUT/$zip $TargetDir/$file 2> /dev/null || \
+                      echo "Error: failed"
+                      set -m
+                    )
+    until [ "$ADB_PUSH_PID" = "" ];do
+        sleep 1
+        adb shell stat -t $TargetDir/$file | \
+        awk '{printf "\r[ %5.1f%% ] ( %s/%s )",($2/'$SIZE')*100,$2/1024,'$SIZE'/1024}'
+    done
+    echo ""
     Finish
+    echo ""
   done
 }
 
@@ -348,20 +387,92 @@ Logcat_Menu ()
     echo "${bldblu}$line${txtrst}"
     echo "Logcat menu"
     echo ""
-    echo "To stop the logcat, press ctrl+z"
-    echo "The name of the logfile will be"
-    echo "~/logcat-<time-date>.log"
-    echo ""
     echo "Select from the following functions"
     echo ""
     echo "  ${bldblu}1${txtrst}    Logcat to file"
     echo "  ${bldblu}2${txtrst}    Live logcat"
+    echo "  ${bldblu}M${txtrst}    Return to main menu"
     echo "${bldblu}$line${txtrst}"
     echo -n "  "
     read -n1 answer
     case "$answer" in
-      [1]) clear && adb logcat >> ~/logcat-$NOWFULL.log;;
-      [2]) clear && adb logcat -C;;
+      [1]) Logcat_File;;
+      [2]) Logcat_Live;;
+      [Mm]) Main;;
+    esac
+  done
+  exit 0
+}
+
+Logcat_Live ()
+{
+  clear
+  while true
+  do
+    clear
+    echo "${bldblu}$line${txtrst}"
+    echo "Live Logcat menu"
+    echo ""
+    echo "To stop the logcat, press ctrl+z"
+    echo ""
+    echo "Select from the following logcat options"
+    echo ""
+    echo "  ${bldblu}1${txtrst}    Verbose"
+    echo "  ${bldblu}2${txtrst}    Debug"
+    echo "  ${bldblu}3${txtrst}    Info"
+    echo "  ${bldblu}4${txtrst}    Warn"
+    echo "  ${bldblu}5${txtrst}    Error"
+    echo "  ${bldblu}6${txtrst}    Fatal"
+    echo "  ${bldblu}M${txtrst}    Return to main menu"
+    echo "${bldblu}$line${txtrst}"
+    echo -n "  "
+    read -n1 answer
+    case "$answer" in
+      [1]) clear && adb logcat -s '*:V';;
+      [2]) clear && adb logcat -s '*:D';;
+      [3]) clear && adb logcat -s '*:I';;
+      [4]) clear && adb logcat -s '*:W';;
+      [5]) clear && adb logcat -s '*:E';;
+      [6]) clear && adb logcat -s '*:F';;
+      [Mm]) Main;;
+    esac
+  done
+  exit 0
+}
+
+Logcat_Live ()
+{
+  clear
+  while true
+  do
+    clear
+    echo "${bldblu}$line${txtrst}"
+    echo "Logcat to file menu"
+    echo ""
+    echo "To stop the logcat, press ctrl+z"
+    echo "The logfile will be located at"
+    echo "~/logcat-<time-date>.log"
+    echo ""
+    echo "Select from the following logcat options"
+    echo ""
+    echo "  ${bldblu}1${txtrst}    Verbose"
+    echo "  ${bldblu}2${txtrst}    Debug"
+    echo "  ${bldblu}3${txtrst}    Info"
+    echo "  ${bldblu}4${txtrst}    Warn"
+    echo "  ${bldblu}5${txtrst}    Error"
+    echo "  ${bldblu}6${txtrst}    Fatal"
+    echo "  ${bldblu}M${txtrst}    Return to main menu"
+    echo "${bldblu}$line${txtrst}"
+    echo -n "  "
+    read -n1 answer
+    case "$answer" in
+      [1]) clear && adb logcat -s '*:V' >> ~/logcat-$NOWFULL.log;;
+      [2]) clear && adb logcat -s '*:D' -f ~/logcat-$NOWFULL.log;;
+      [3]) clear && adb logcat -s '*:I' -f ~/logcat-$NOWFULL.log;;
+      [4]) clear && adb logcat -s '*:W' -f ~/logcat-$NOWFULL.log;;
+      [5]) clear && adb logcat -s '*:E' -f ~/logcat-$NOWFULL.log;;
+      [6]) clear && adb logcat -s '*:F' -f ~/logcat-$NOWFULL.log;;
+      [Mm]) Main;;
     esac
   done
   exit 0
@@ -381,7 +492,7 @@ Reboot_Menu ()
     echo "  ${bldblu}1${txtrst}    Reboot"
     echo "  ${bldblu}2${txtrst}    Reboot to recovery"
     echo "  ${bldblu}3${txtrst}    Reboot to bootloader"
-    echo "  ${bldblu}4${txtrst}    Return to main menu"
+    echo "  ${bldblu}M${txtrst}    Return to main menu"
     echo "${bldblu}$line${txtrst}"
     echo -n "  "
     read -n1 answer
@@ -389,7 +500,7 @@ Reboot_Menu ()
       [1]) adb reboot && Main;;
       [2]) Reboot_Recovery;;
       [3]) Reboot_Bootloader;;
-      [4]) Main;;
+      [Mm]) Main;;
     esac
   done
   exit 0
@@ -397,6 +508,10 @@ Reboot_Menu ()
 
 Main ()
 {
+  VERSION_MAJOR=$(cat $SLIM/vendor/slim/config/common.mk | grep 'PRODUCT_VERSION_MAJOR =' | cut -d " " -f 3)
+  VERSION_MINOR=$(cat $SLIM/vendor/slim/config/common.mk | grep 'PRODUCT_VERSION_MINOR =' | cut -d " " -f 3)
+  VERSION_MAINTENANCE=$(cat $SLIM/vendor/slim/config/common.mk | grep 'PRODUCT_VERSION_MAINTENANCE =' | cut -d " " -f 3)
+
   clear
   while true
   do
@@ -404,7 +519,8 @@ Main ()
     echo "${bldblu}$line${txtrst}"
     echo "SLIM maintenance and build script"
     echo ""
-    echo "Building ${bldblu}Slimkat 4.4${txtrst} for ${bldblu}$DEVICE${txtrst}"
+    echo "Building ${bldblu}Slimkat $VERSION_MAJOR $VERSION_MINOR $VERSION_MAINTENANCE${txtrst}"
+    echo "for ${bldblu}$DEVICE${txtrst}"
     echo ""
     echo "Select from the following functions"
     echo ""
